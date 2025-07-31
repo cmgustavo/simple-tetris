@@ -1,0 +1,7 @@
+{
+  "name": "simple-tetris",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
