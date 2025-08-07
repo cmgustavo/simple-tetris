@@ -1,4 +1,13 @@
 ion-content {
+  display: block;
+  background-color: #2B2D42; // dark pastel navy
+  min-height: 100vh;
+  color: #f4f4f4;
+  background-image: radial-gradient(#555 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+ion-content {
   --padding-top: 16px;
   --padding-bottom: 16px;
   display: flex;
@@ -94,3 +103,58 @@ ion-button {
   font-size: 14px;
 }
 
+.retro-bar {
+  position: fixed;
+  bottom: 0;
+  background-color: #fbfbfb;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  z-index: 99;
+
+  ion-button {
+    --background: #f0f0f0;
+    --color: #575757;
+    --border-color: #ccc;
+    --border-style: solid;
+    --border-width: 1px;
+    --box-shadow: inset -2px -2px 5px #ccc, inset 2px 2px 5px #fbfbfb;
+  }
+}
+
+.retro-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .dpad-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+  }
+}
+
+.retro-right {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.retro-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.retro-btn ion-icon {
+  font-size: 26px;
+}
+
+.retro-btn:disabled {
+  opacity: 0.4;
+}

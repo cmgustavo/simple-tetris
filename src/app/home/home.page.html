@@ -34,15 +34,16 @@
       <div class="score">{{ score }}</div>
     </div>
     <div class="buttons-box">
-      <ion-button size="small" (click)="pauseOrResume()">
+      <ion-button size="small" [disabled]="!gameStarted" (click)="pauseOrResume()">
         {{ isPaused ? 'Resume' : 'Pause' }}
       </ion-button>
       <ion-button
         size="small"
         color="success"
         (click)="newGame()"
-        [disabled]="!isPaused"
+        [disabled]="gameStarted && !isPaused"
       >
+        <ion-icon name="play-outline"></ion-icon>
         New Game
       </ion-button>
     </div>
@@ -51,5 +52,31 @@
   <!-- Canvas stays below -->
   <div class="canvas-container">
     <canvas #gameCanvas id="gameCanvas"></canvas>
+  </div>
+
+  <div class="retro-bar">
+    <div class="retro-left">
+      <div class="dpad-row">
+        <ion-button (click)="moveLeft()" [disabled]="!gameStarted" class="retro-btn left">
+          <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
+        </ion-button>
+        <ion-button (click)="softDrop()"
+                    (pointerdown)="onSoftDropPress()"
+                    (pointerup)="onSoftDropRelease()"
+                    (pointerleave)="onSoftDropRelease()"
+                    [disabled]="!gameStarted" class="retro-btn down">
+          <ion-icon slot="icon-only" name="chevron-down-outline"></ion-icon>
+        </ion-button>
+        <ion-button (click)="moveRight()" [disabled]="!gameStarted" class="retro-btn right">
+          <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
+
+    <div class="retro-right">
+      <ion-button (click)="rotate()" [disabled]="!gameStarted" class="retro-btn">
+        <ion-icon slot="icon-only" name="reload-outline"></ion-icon>
+      </ion-button>
+    </div>
   </div>
 </ion-content>

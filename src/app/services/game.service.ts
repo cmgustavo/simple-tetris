@@ -4,7 +4,15 @@ import {StorageService} from './storage.service';
 const COLS = 10;
 const ROWS = 20;
 
-const COLORS = ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f', '#aaa'];
+const COLORS = [
+  '#A3C4F3', // Soft Blue
+  '#FFB3C6', // Soft Pink
+  '#B5EAD7', // Mint
+  '#FFDAC1', // Peach
+  '#E2F0CB', // Light Green
+  '#CBAACB', // Lavender
+  '#FFD6A5'  // Pastel Orange
+];
 
 const SHAPES = [
   [[1, 1, 1, 1]], // I
@@ -24,7 +32,7 @@ export class GameService {
   public onGameOver: (() => void) | null = null;
   private ctx!: CanvasRenderingContext2D;
   private board: number[][] = [];
-  private currentPiece: { shape: number[][], color: string, x: number, y: number, drawX: number; } | null = null;
+  private currentPiece: { shape: number[][], color: string, x: number, y: number, drawX: number; colorIndex: number; } | null = null;
   private score = 0;
   private gameOver = false;
   private paused = false;
@@ -83,7 +91,7 @@ export class GameService {
     if (this.onScoreChange) this.onScoreChange(this.score);
     this.gameOver = false;
     this.paused = false;
-    this.board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    this.board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
     this.spawnPiece();
 
     // Start the new animation loop
@@ -156,7 +164,8 @@ export class GameService {
       color,
       x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2),
       y: 0,
-      drawX: 0
+      drawX: 0,
+      colorIndex: shapeIndex + 1
     };
     this.currentPiece.drawX = this.currentPiece.x;
 
@@ -181,7 +190,6 @@ export class GameService {
       if (this.collides()) {
         this.gameOver = true;
         if (this.score > 0) {
-          console.log('Saving score:', this.score);
           this.storage.saveHighScore(this.score).then(() => {
             if (this.onGameOver) this.onGameOver(); // Trigger callback
           });
@@ -194,7 +202,7 @@ export class GameService {
   }
 
   private collides(): boolean {
-    const { shape, x, y } = this.currentPiece!;
+    const {shape, x, y} = this.currentPiece!;
     return this.checkCollision(shape, x, y);
   }
 
@@ -211,36 +219,56 @@ export class GameService {
     if (!this.ctx) return;
     this.ctx.clearRect(0, 0, COLS * this.blockSize, ROWS * this.blockSize);
 
-    // Draw background dots
-    this.ctx.fillStyle = '#ccc';
-    for (let y = 0; y < ROWS; y++) {
-      for (let x = 0; x < COLS; x++) {
-        this.ctx.beginPath();
-        this.ctx.arc(
-          x * this.blockSize + this.blockSize / 2,
-          y * this.blockSize + this.blockSize / 2,
-          1.2, 0, Math.PI * 2
-        );
-        this.ctx.fill();
-      }
+    // Draw grid lines
+    this.ctx.strokeStyle = '#ddd';
+    this.ctx.lineWidth = 0.5;
+
+    for (let x = 0; x <= COLS; x++) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(x * this.blockSize, 0);
+      this.ctx.lineTo(x * this.blockSize, ROWS * this.blockSize);
+      this.ctx.stroke();
+    }
+
+    for (let y = 0; y <= ROWS; y++) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(0, y * this.blockSize);
+      this.ctx.lineTo(COLS * this.blockSize, y * this.blockSize);
+      this.ctx.stroke();
     }
 
     this.board.forEach((row, y) =>
       row.forEach((val, x) => {
         if (val) {
+          // Fill the block
           this.ctx.fillStyle = COLORS[val - 1];
-          this.ctx.fillRect(x * this.blockSize, y * this.blockSize, this.blockSize, this.blockSize);
+          this.ctx.fillRect(
+            x * this.blockSize,
+            y * this.blockSize,
+            this.blockSize,
+            this.blockSize
+          );
+
+// Add a border
+          this.ctx.strokeStyle = '#ddd'; // Dark pastel outline (same as background or slightly darker)
+          this.ctx.lineWidth = 0.5;
+          this.ctx.strokeRect(
+            x * this.blockSize + 0.5,
+            y * this.blockSize + 0.5,
+            this.blockSize - 1,
+            this.blockSize - 1
+          );
         }
       })
     );
 
     if (this.currentPiece) {
-      const { shape, x, y, color } = this.currentPiece;
+      const {shape, x, y, color} = this.currentPiece;
       // Smooth horizontal movement
       this.currentPiece.drawX += (x - this.currentPiece.drawX) * 0.3;
 
       const ghostY = this.getGhostY();
-      this.ctx.globalAlpha = 0.3; // ghost transparency
+      this.ctx.globalAlpha = 0.2; // ghost transparency
       this.ctx.fillStyle = color;
       shape.forEach((row, dy) =>
         row.forEach((val, dx) => {
@@ -258,7 +286,8 @@ export class GameService {
 
       // Smooth falling animation
       const isLanding = this.checkCollision(shape, x, y + 1);
-      const animProgress = isLanding ? 0 : fallProgress;
+      //const animProgress = isLanding ? 0 : fallProgress;
+      const animProgress = 0; // disable falling animation for better UX
 
       // Draw actual falling piece
       this.ctx.fillStyle = color;
@@ -286,8 +315,8 @@ export class GameService {
       const centerX = (COLS * this.blockSize) / 2;
       const centerY = (ROWS * this.blockSize) / 2;
 
-      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-      this.ctx.fillRect(0, centerY - 30, COLS * this.blockSize, 60);
+      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      this.ctx.fillRect(0, centerY - 35, COLS * this.blockSize, 60);
 
       this.ctx.fillStyle = '#fff';
       this.ctx.font = '20px Arial';
@@ -301,8 +330,8 @@ export class GameService {
       const centerY = (ROWS * this.blockSize) / 2;
 
       // Dark background box
-      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-      this.ctx.fillRect(0, centerY - 40, COLS * this.blockSize, 80);
+      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      this.ctx.fillRect(0, centerY - 35, COLS * this.blockSize, 80);
 
       // "Game Over" text
       this.ctx.fillStyle = '#fff';
@@ -388,5 +417,32 @@ export class GameService {
     this.paused = !this.paused;
     this.draw(); // refresh to show "Paused" overlay if needed
   }
+
+  private placePiece() {
+    if (!this.currentPiece) return;
+    const {shape, x, y, colorIndex} = this.currentPiece;
+
+    shape.forEach((row, dy) => {
+      row.forEach((val, dx) => {
+        if (val) {
+          this.board[y + dy][x + dx] = colorIndex;
+        }
+      });
+    });
+
+    this.clearLines(); // Clear completed lines
+    this.spawnPiece(); // Spawn the next piece
+    this.dropCounter = 0; // Reset drop timer
+  }
+
+
+  hardDrop() {
+    if (!this.currentPiece) return;
+
+    this.currentPiece.y = this.getGhostY();
+    this.placePiece();
+    this.draw();
+  }
+
 
 }

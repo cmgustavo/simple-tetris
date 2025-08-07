@@ -25,13 +25,21 @@
 @import "@ionic/angular/css/text-transformation.css";
 @import "@ionic/angular/css/flex-utils.css";
 
-/**
- * Ionic Dark Mode
- * -----------------------------------------------------
- * For more info, please see:
- * https://ionicframework.com/docs/theming/dark-mode
- */
+ion-item {
+  --transition: none;
+}
 
-/* @import "@ionic/angular/css/palettes/dark.always.css"; */
-/* @import "@ionic/angular/css/palettes/dark.class.css"; */
-@import '@ionic/angular/css/palettes/dark.system.css';
+/* ==============================
+   Global Flat Design Styles
+   ============================== */
+* {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* Custom button styles */
+ion-button {
+  height: 38px;
+  font-weight: 500;
+  font-size: 1.1rem;
+}

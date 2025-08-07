@@ -1,6 +1,6 @@
 import {Component, ElementRef, ViewChild} from '@angular/core';
 import {GameService} from '../services/game.service';
-import { IonicModule, ModalController } from '@ionic/angular';
+import { IonicModule, ModalController, IonIcon } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { HighScoresComponent } from '../components/high-scores/high-scores.component';
 import {StorageService, ScoreEntry} from '../services/storage.service';
@@ -19,6 +19,9 @@ export class HomePage {
   public score: number = 0;
   public highScores: ScoreEntry[] = [];
   public isPaused: boolean = true; // game starts in paused state
+  public gameStarted = false;
+  private softDropTimeout: any;
+  private isSoftDropping = false;
 
   constructor(
     private gameService: GameService,
@@ -65,6 +68,7 @@ export class HomePage {
 
   newGame() {
     this.isPaused = false;
+    this.gameStarted = true;
     this.gameService.newGame();
   }
 
@@ -85,6 +89,45 @@ export class HomePage {
     });
 
     await modal.present();
+  }
+
+  moveLeft() {
+    this.gameService.handleKey('ArrowLeft');
+  }
+
+  moveRight() {
+    this.gameService.handleKey('ArrowRight');
+  }
+
+  rotate() {
+    this.gameService.handleKey('ArrowUp');
+  }
+
+  softDrop() {
+    this.gameService.handleKey('ArrowDown');
+  }
+
+  hardDrop() {
+    this.gameService.hardDrop();
+  }
+
+  onSoftDropPress() {
+    this.isSoftDropping = true;
+
+    // Start soft dropping immediately
+    this.softDrop();
+
+    // If held for 400ms, convert to hard drop
+    this.softDropTimeout = setTimeout(() => {
+      if (this.isSoftDropping) {
+        this.hardDrop();
+      }
+    }, 400);
+  }
+
+  onSoftDropRelease() {
+    this.isSoftDropping = false;
+    clearTimeout(this.softDropTimeout);
   }
 
 
