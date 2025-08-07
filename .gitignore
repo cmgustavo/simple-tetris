@@ -137,3 +137,46 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Ionic Angula Project
+
+# Compiled output
+www/
+dist/
+build/
+
+# Environment and local config
+.env
+.env.*.local
+*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE/editor specific
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Capacitor
+ios/
+android/
+plugins/
+
+# Cordova
+platforms/
+plugins/
+
+# Misc
+coverage/
+.sourcemaps/
+*.tgz
+*.zip
+
+# Angular specific
+.angular/
