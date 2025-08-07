@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core';
 import {StorageService} from './storage.service';
 
 const COLS = 10;
-const ROWS = 20;
+const ROWS = 18;
 
 const COLORS = [
   '#A3C4F3', // Soft Blue

@@ -1,25 +1,11 @@
 ion-content {
-  display: block;
-  background-color: #2B2D42; // dark pastel navy
-  min-height: 100vh;
-  color: #f4f4f4;
-  background-image: radial-gradient(#555 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-ion-content {
-  --padding-top: 16px;
-  --padding-bottom: 16px;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
   height: 100%;
-}
-
-canvas {
-  margin-top: 16px;
-  max-width: 100%;
 }
 
 .canvas-container {
@@ -62,7 +48,6 @@ canvas#gameCanvas {
   margin: 0 auto 12px auto;
   background-color: #f8f8f8;
   border-radius: 10px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 .next-box, .score-box {
@@ -93,7 +78,6 @@ canvas {
 .buttons-box {
   display: flex;
   flex-direction: column;
-  gap: 6px;
   align-items: center;
 }
 
@@ -111,7 +95,7 @@ ion-button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
   z-index: 99;
 
   ion-button {
