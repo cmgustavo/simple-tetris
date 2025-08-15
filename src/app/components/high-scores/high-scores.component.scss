@@ -1,0 +1,28 @@
+/* For the high scores modal or list item */
+.score-label {
+  display: flex;
+  align-items: center;
+  gap: 15px; /* space between rank and score */
+}
+
+.rank {
+  font-size: 1.8rem;   /* bigger font for rank */
+  font-weight: bold;
+  color: var(--ion-color-primary);
+  line-height: 1;
+}
+
+.score {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--ion-text-color);
+}
+
+.gold {
+  color: gold;
+  text-shadow: 0 0 4px rgba(255, 215, 0, 0.6);
+}
+
+.datetime {
+  font-size: .8rem;
+}

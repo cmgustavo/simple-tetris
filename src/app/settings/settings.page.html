@@ -1,0 +1,60 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button default-href="#/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Settings</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-buttons slot="start">
+        <ion-back-button default-href="#/home"></ion-back-button>
+      </ion-buttons>
+      <ion-title size="large">Settings</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-list>
+    <!-- Scores -->
+    <ion-item-group>
+      <ion-item-divider>
+        <ion-label>Scores</ion-label>
+      </ion-item-divider>
+
+      <ion-item button="View High Scores" (click)="openHighScores()">
+        <ion-label>View High Scores</ion-label>
+      </ion-item>
+
+      <ion-item button="Clear High Scores" (click)="confirmClearScores()">
+        <ion-label color="danger">Clear High Scores</ion-label>
+      </ion-item>
+    </ion-item-group>
+
+    <!-- About -->
+    <ion-item-group>
+      <ion-item-divider>
+        <ion-label>About</ion-label>
+      </ion-item-divider>
+
+      <ion-item>
+        <ion-label>Version</ion-label>
+        <ion-note slot="end">
+          {{ appVersion }}
+        </ion-note>
+      </ion-item>
+
+      <ion-item>
+        <ion-label>
+          <h2>Credits</h2>
+          <p>
+            Built with Ionic & Angular. Game concept inspired by classic falling-block puzzles.
+          </p>
+        </ion-label>
+      </ion-item>
+    </ion-item-group>
+  </ion-list>
+
+</ion-content>

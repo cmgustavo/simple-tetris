@@ -4,8 +4,8 @@
       Tetris
     </ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="showHighScores()">
-        High Scores
+      <ion-button (click)="goToSettings()">
+        <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -16,8 +16,8 @@
     <ion-toolbar>
       <ion-title size="large">Tetris</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="showHighScores()">
-        High Scores
+      <ion-button (click)="goToSettings()">
+        <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
     </ion-toolbar>
@@ -48,11 +48,11 @@
     </div>
   </div>
 
-  <!-- Canvas stays below -->
-  <div class="canvas-container">
+  <div #gestureArea class="gesture-area">
     <canvas #gameCanvas id="gameCanvas"></canvas>
   </div>
 
+  <!--
   <div class="retro-bar">
     <div class="retro-left">
       <div class="dpad-row">
@@ -78,4 +78,5 @@
       </ion-button>
     </div>
   </div>
+  -->
 </ion-content>

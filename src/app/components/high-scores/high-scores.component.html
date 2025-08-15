@@ -2,7 +2,10 @@
   <ion-toolbar>
     <ion-title>Top 10 Scores</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="close()">Close</ion-button>
+      <ion-button (click)="close()">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -10,7 +13,13 @@
 <ion-content class="ion-padding">
   <ion-list *ngIf="scores.length > 0; else noScores">
     <ion-item *ngFor="let entry of scores; let i = index">
-      <ion-label>{{ i + 1 }}. {{ entry.score }} – {{ entry.date | date:'short' }}</ion-label>
+      <ion-label class="score-label">
+        <span [class.gold]="i === 0" class="rank">{{ i + 1 }}</span>
+        <span class="score">{{ entry.score }}</span>
+      </ion-label>
+      <ion-note slot="end" class="datetime">
+        {{ entry.date | date: 'short' }}
+      </ion-note>
     </ion-item>
   </ion-list>
 
@@ -18,13 +27,3 @@
     <ion-text>No scores yet</ion-text>
   </ng-template>
 </ion-content>
-
-<ion-footer>
-  <ion-toolbar>
-    <ion-button expand="block" color="danger" (click)="confirmClear()">
-      Clear Scores
-    </ion-button>
-  </ion-toolbar>
-</ion-footer>
-
-

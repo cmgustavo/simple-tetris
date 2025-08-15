@@ -12,7 +12,9 @@ import {
   arrowDownCircleOutline,
   pauseOutline,
   playOutline,
-  reloadOutline
+  reloadOutline,
+  settingsOutline,
+  closeOutline
 } from 'ionicons/icons';
 
 addIcons({
@@ -24,7 +26,9 @@ addIcons({
   'arrow-down-circle-outline': arrowDownCircleOutline,
   'pause-outline': pauseOutline,
   'play-outline': playOutline,
-  'reload-outline': reloadOutline
+  'reload-outline': reloadOutline,
+  'settings-outline': settingsOutline,
+  'close-outline': closeOutline
 });
 
 import { routes } from './app/app.routes';

@@ -1,8 +1,8 @@
 import {Injectable} from '@angular/core';
-import {StorageService} from './storage.service';
+import {ScoresService} from './scores.service';
 
-const COLS = 10;
-const ROWS = 18;
+const COLS = 12;
+const ROWS = 24;
 
 const COLORS = [
   '#A3C4F3', // Soft Blue
@@ -29,22 +29,50 @@ const SHAPES = [
 })
 export class GameService {
 
+  // Base config (you can tweak these)
+  private BASE_DROP_MS = 900;      // <- main speed: 900ms per step (slower)
+  private SOFT_DROP_FACTOR = 0.20; // soft drop: 20% of normal interval (5x faster)
+  private MIN_DROP_MS = 120;       // clamp if you add levels later
+
+  // Runtime state
+  private dropInterval = this.BASE_DROP_MS; // current falling interval
+  private softDropping = false;
+
+  // Animation timing
+  private lastTime = 0;
+  private dropCounter = 0;
+
   public onGameOver: (() => void) | null = null;
   private ctx!: CanvasRenderingContext2D;
   private board: number[][] = [];
-  private currentPiece: { shape: number[][], color: string, x: number, y: number, drawX: number; colorIndex: number; } | null = null;
+  private currentPiece: {
+    shape: number[][],
+    color: string,
+    x: number,
+    y: number,
+    drawX: number;
+    colorIndex: number;
+  } | null = null;
   private score = 0;
   private gameOver = false;
   private paused = false;
   private blockSize = 20;
-  private lastTime = 0;
-  private dropInterval = 500; // milliseconds
-  private dropCounter = 0;
   private nextShapeIndex: number = Math.floor(Math.random() * SHAPES.length);
   private nextCtx: CanvasRenderingContext2D | null = null;
   public onScoreChange: ((score: number) => void) | null = null;
 
-  constructor(private storage: StorageService) {
+  constructor(private scoresService: ScoresService) {
+  }
+
+  private notifyScoreChange() {
+    // call this whenever score changes or resets
+    this.onScoreChange?.(this.score);
+    this.scoresService.setCurrentScore(this.score); // persist
+  }
+
+  private addScore(points: number) {
+    this.score += points;
+    this.notifyScoreChange();
   }
 
   init(ctx: CanvasRenderingContext2D, nextCtx?: CanvasRenderingContext2D) {
@@ -60,6 +88,8 @@ export class GameService {
   }
 
   start() {
+    this.score = 0;
+    this.notifyScoreChange(); // persist 0
     this.lastTime = performance.now();
     requestAnimationFrame(this.frame);
   }
@@ -67,22 +97,19 @@ export class GameService {
   private frame = (time: number) => {
     const delta = time - this.lastTime;
     this.lastTime = time;
+    this.dropCounter += delta;
 
-    if (!this.paused && !this.gameOver) {
-      this.dropCounter += delta;
+    const currentInterval = this.softDropping
+      ? Math.max(this.dropInterval * this.SOFT_DROP_FACTOR, 40) // cap very fast soft drop
+      : this.dropInterval;
 
-      if (this.dropCounter > this.dropInterval) {
-        this.dropCounter = 0;
-        this.update();
-      }
+    if (!this.paused && !this.gameOver && this.dropCounter >= currentInterval) {
+      this.dropCounter = 0;
+      this.update(); // this does y++ and merge/clear if needed
     }
 
-    // use 0 progress if paused or game over
-    const fallProgress = (!this.paused && !this.gameOver)
-      ? this.dropCounter / this.dropInterval
-      : 0;
-
-    this.draw(fallProgress);
+    // no smooth fall: draw without progress
+    this.draw(0);
     requestAnimationFrame(this.frame);
   };
 
@@ -93,6 +120,7 @@ export class GameService {
     this.paused = false;
     this.board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
     this.spawnPiece();
+    this.setBaseSpeed(1000); // 1s per step
 
     // Start the new animation loop
     this.lastTime = performance.now();
@@ -190,9 +218,8 @@ export class GameService {
       if (this.collides()) {
         this.gameOver = true;
         if (this.score > 0) {
-          this.storage.saveHighScore(this.score).then(() => {
-            if (this.onGameOver) this.onGameOver(); // Trigger callback
-          });
+          this.scoresService.maybePromoteToHighScores(this.score);
+          this.scoresService.clearCurrentScore(); // no longer “in progress”
         }
         this.draw(); // Draw final board with message
       }
@@ -238,28 +265,28 @@ export class GameService {
     }
 
     this.board.forEach((row, y) =>
-      row.forEach((val, x) => {
-        if (val) {
-          // Fill the block
-          this.ctx.fillStyle = COLORS[val - 1];
-          this.ctx.fillRect(
-            x * this.blockSize,
-            y * this.blockSize,
-            this.blockSize,
-            this.blockSize
-          );
+        row.forEach((val, x) => {
+          if (val) {
+            // Fill the block
+            this.ctx.fillStyle = COLORS[val - 1];
+            this.ctx.fillRect(
+              x * this.blockSize,
+              y * this.blockSize,
+              this.blockSize,
+              this.blockSize
+            );
 
 // Add a border
-          this.ctx.strokeStyle = '#ddd'; // Dark pastel outline (same as background or slightly darker)
-          this.ctx.lineWidth = 0.5;
-          this.ctx.strokeRect(
-            x * this.blockSize + 0.5,
-            y * this.blockSize + 0.5,
-            this.blockSize - 1,
-            this.blockSize - 1
-          );
-        }
-      })
+            this.ctx.strokeStyle = '#ddd'; // Dark pastel outline (same as background or slightly darker)
+            this.ctx.lineWidth = 0.5;
+            this.ctx.strokeRect(
+              x * this.blockSize + 0.5,
+              y * this.blockSize + 0.5,
+              this.blockSize - 1,
+              this.blockSize - 1
+            );
+          }
+        })
     );
 
     if (this.currentPiece) {
@@ -409,12 +436,14 @@ export class GameService {
     this.score += linesCleared * 100;
     if (this.onScoreChange) this.onScoreChange(this.score);
 
+    this.notifyScoreChange();
   }
 
   togglePause() {
     if (this.gameOver) return;
 
     this.paused = !this.paused;
+    this.scoresService.setCurrentScore(this.score);
     this.draw(); // refresh to show "Paused" overlay if needed
   }
 
@@ -444,5 +473,30 @@ export class GameService {
     this.draw();
   }
 
+  /** Set the base falling speed in milliseconds per grid step */
+  public setBaseSpeed(ms: number) {
+    this.BASE_DROP_MS = Math.max(ms, this.MIN_DROP_MS);
+    this.dropInterval = this.BASE_DROP_MS;
+  }
+
+  /** Set current level -> faster fall (optional) */
+  public setLevel(level: number) {
+    // Example curve: speed up by 8% each level
+    const factor = Math.pow(0.92, level);
+    this.dropInterval = Math.max(this.BASE_DROP_MS * factor, this.MIN_DROP_MS);
+  }
+
+  /** Enable/disable soft drop while a button/gesture is held */
+  public setSoftDropping(on: boolean) {
+    this.softDropping = on;
+  }
+
+  public isPaused(): boolean {
+    return this.paused;
+  }
+
+  public getScore(): number {
+    return this.score;
+  }
 
 }

@@ -1,0 +1,52 @@
+/* src/app/pages/settings/settings.page.scss */
+
+.bg-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  padding: 12px 16px 6px;
+}
+
+.bg-swatch {
+  position: relative;
+  width: 100%;
+  padding-top: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--ion-color-step-150);
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  background: linear-gradient(135deg, var(--c0), var(--c1) 50%, var(--c2));
+  transition: transform 140ms ease, box-shadow 140ms ease, filter 300ms ease;
+}
+
+.bg-swatch:hover {
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 0 6px 22px rgba(0,0,0,0.12);
+}
+
+.bg-swatch.selected {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.bg-swatch .check {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  font-size: 18px;
+  color: white;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+}
+
+/* subtle animated shimmer when enabled via a class on body */
+:host-context(.bg-animated) .bg-swatch {
+  background-size: 200% 200%;
+  animation: floatGradient 6s ease-in-out infinite;
+}
+
+@keyframes floatGradient {
+  0%   { background-position: 0% 50%;   filter: saturate(0.95); }
+  50%  { background-position: 100% 50%; filter: saturate(1.05); }
+  100% { background-position: 0% 50%;   filter: saturate(0.95); }
+}

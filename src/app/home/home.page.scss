@@ -8,10 +8,18 @@ ion-content {
   height: 100%;
 }
 
-.canvas-container {
+canvas {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.gesture-area {
   display: flex;
   justify-content: center;
   width: 100%;
+  /* Let us read both axes; prevents pull-to-refresh/back-swipe conflicts */
+  touch-action: none;
 }
 
 canvas#gameCanvas {
@@ -54,12 +62,6 @@ canvas#gameCanvas {
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-canvas {
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
 }
 
 .label {

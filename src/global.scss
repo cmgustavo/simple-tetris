@@ -43,3 +43,18 @@ ion-button {
   font-weight: 500;
   font-size: 1.1rem;
 }
+
+:root {
+  --app-bg-0: #a8ff78;
+  --app-bg-1: #78ffd6;
+  --app-bg-2: #5ad1ff;
+}
+
+/* app background surface */
+body {
+  background: radial-gradient(1200px 800px at 10% 10%, var(--app-bg-0), transparent 60%),
+  radial-gradient(1200px 800px at 90% 20%, var(--app-bg-1), transparent 60%),
+  radial-gradient(1200px 800px at 50% 100%, var(--app-bg-2), transparent 60%),
+  var(--ion-background-color);
+  background-attachment: fixed;
+}
