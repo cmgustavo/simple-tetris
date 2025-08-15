@@ -1,25 +1,18 @@
-ion-content {
-  --padding-top: 10px;
-  --padding-bottom: 10px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  height: 100%;
-}
-
 canvas {
   background-color: #fff;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
 
-.gesture-area {
-  display: flex;
-  justify-content: center;
+.container-canvas {
   width: 100%;
-  /* Let us read both axes; prevents pull-to-refresh/back-swipe conflicts */
+  text-align: center;
+}
+
+#gameCanvas, .gesture-area {
   touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 canvas#gameCanvas {
@@ -50,12 +43,9 @@ canvas#gameCanvas {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 12px 8px;
   width: 100%;
-  max-width: 400px;
-  margin: 0 auto 12px auto;
-  background-color: #f8f8f8;
-  border-radius: 10px;
+  max-width: 340px;
+  margin: 10px auto 12px auto;
 }
 
 .next-box, .score-box {

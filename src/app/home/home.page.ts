@@ -69,6 +69,7 @@ export class HomePage implements AfterViewInit, OnDestroy {
     // (optional) auto-pause when app backgrounds & persist score
     App.addListener('appStateChange', ({ isActive }) => {
       if (!isActive) {
+        this.isPaused = true;
         if (!this.gameService.isPaused()) this.gameService.togglePause();
         this.scoresService.setCurrentScore(this.gameService.getScore());
       }
@@ -84,77 +85,107 @@ export class HomePage implements AfterViewInit, OnDestroy {
       if (document.hidden) this.scoresService.setCurrentScore(this.gameService.getScore());
     });
 
-    // thresholds (tweak to taste)
-    const SWIPE_PX = 24;         // min travel to count as swipe
-    const TAP_TIME_MS = 220;     // max duration for tap
-    const TAP_TRAVEL_PX = 10;    // max movement for tap
-    const FLICK_VELOCITY = 0.45; // px/ms for hard-drop flick down
+    // --- Tunables ---
+    const BOARD_COLS = 10;                  // set to your actual board width if different
+    const CELL_PX = Math.floor(this.canvasRef.nativeElement.width / BOARD_COLS) || 24;
 
-    let startX = 0, startY = 0, startTime = 0;
+    const TAP_TIME_MS = 200;                // max press time to count as tap
+    const TAP_MOVE_PX = 8;                  // max travel to still be a tap
+    const LONG_PRESS_MS = 400;              // hold time to trigger hard drop
+    const LONG_PRESS_MOVE_CANCEL_PX = 10;   // if moved more than this, cancel long-press
+
+// --- State ---
+    let startX = 0, lastX = 0, startY = 0, pressStart = 0;
+    let accumX = 0;
+    let longPressTimer: any = null;
+    let longPressed = false;
+
+    const cancelLongPress = () => {
+      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    };
+    const scheduleLongPress = () => {
+      cancelLongPress();
+      longPressed = false;
+      longPressTimer = setTimeout(() => {
+        if ((this.gameService as any).paused || (this.gameService as any).gameOver) return;
+        longPressed = true;
+        if (this.gameService.hardDrop) this.gameService.hardDrop();
+      }, LONG_PRESS_MS);
+    };
+
+    const moveOnce = (dir: -1 | 1) => {
+      if ((this.gameService as any).paused || (this.gameService as any).gameOver) return;
+      // swap to direct methods if you have them: moveLeft()/moveRight()
+      this.gameService.handleKey(dir === -1 ? 'ArrowLeft' : 'ArrowRight');
+    };
 
     this.gesture = this.gestureCtrl.create({
       el: this.gestureArea.nativeElement,
       gestureName: 'tetris-gestures',
-      onStart: (ev: GestureDetail) => {
-        startX = ev.startX ?? 0;
-        startY = ev.startY ?? 0;
-        startTime = performance.now();
+      direction: 'x',             // horizontal only
+      threshold: 0,
+      disableScroll: true,
+      priority: 9999 as any,      // (Ionic 5) use 'priority'; Ionic 6+ also honors 'gesturePriority'
+      gesturePriority: 9999 as any,
+
+      onStart: (ev: any) => {
+        pressStart = performance.now();
+        startX = lastX = (ev.startX ?? ev.currentX ?? 0);
+        startY = (ev.startY ?? ev.currentY ?? 0);
+        accumX = 0;
+        scheduleLongPress();
       },
-      onEnd: (ev: GestureDetail) => {
-        const currentX = ev.currentX ?? (startX + (ev.deltaX ?? 0));
-        const currentY = ev.currentY ?? (startY + (ev.deltaY ?? 0));
 
-        const dx = (ev.deltaX ?? (currentX - startX));
-        const dy = (ev.deltaY ?? (currentY - startY));
-        const adx = Math.abs(dx);
-        const ady = Math.abs(dy);
+      onMove: (ev: any) => {
+        const x = (ev.currentX ?? (startX + (ev.deltaX ?? 0))) || 0;
+        const y = (ev.currentY ?? (startY + (ev.deltaY ?? 0))) || 0;
 
-        const dt = performance.now() - startTime; // ms
-        const vx = adx / dt; // px/ms
-        const vy = ady / dt;
-
-        // ignore if paused or over (adjust if you want taps to still rotate)
-        if ((this.gameService as any).paused || (this.gameService as any).gameOver) return;
-
-        // TAP → rotate (and optional double-tap → hard drop)
-        if (dt <= TAP_TIME_MS && adx < TAP_TRAVEL_PX && ady < TAP_TRAVEL_PX) {
-          const now = performance.now();
-          if (now - this.lastTapTime < 250 && this.gameService.hardDrop) {
-            this.gameService.hardDrop(); // double-tap = hard drop
-          } else {
-            this.gameService.handleKey('ArrowUp'); // rotate
-          }
-          this.lastTapTime = now;
-          return;
+        // cancel long-press if the user starts moving too much
+        if (Math.hypot(x - startX, y - startY) > LONG_PRESS_MOVE_CANCEL_PX) {
+          cancelLongPress();
         }
 
-        // Dominant axis decides
-        if (adx > ady) {
-          // horizontal swipe
-          if (adx >= SWIPE_PX) {
-            if (dx > 0) this.gameService.handleKey('ArrowRight');
-            else this.gameService.handleKey('ArrowLeft');
-          }
-        } else {
-          // vertical swipe
-          if (ady >= SWIPE_PX) {
-            if (dy > 0) {
-              // down swipe → soft drop; flick down → hard drop
-              if (vy > FLICK_VELOCITY && this.gameService.hardDrop) {
-                this.gameService.hardDrop();
-              } else {
-                this.gameService.handleKey('ArrowDown');
-              }
-            } else {
-              // up swipe → rotate
-              this.gameService.handleKey('ArrowUp');
-            }
+        // discrete horizontal moves: one step per crossed cell width
+        const dx = x - lastX;
+        lastX = x;
+        accumX += dx;
+
+        while (Math.abs(accumX) >= CELL_PX) {
+          const dir: -1 | 1 = accumX > 0 ? 1 : -1;
+          accumX -= dir * CELL_PX;
+          moveOnce(dir);
+        }
+      },
+
+      onEnd: (ev: any) => {
+        const now = performance.now();
+        cancelLongPress();
+
+        // if hard drop already triggered during long press, stop here
+        if (longPressed) return;
+
+        const currentX = ev.currentX ?? ((startX + (ev.deltaX ?? 0)) || 0);
+        const currentY = ev.currentY ?? ((startY + (ev.deltaY ?? 0)) || 0);
+
+        const totalDx = Math.abs(currentX - startX);
+        const totalDy = Math.abs(currentY - startY);
+        const dt = now - pressStart;
+
+        // Single tap -> rotate
+        if (dt <= TAP_TIME_MS && totalDx < TAP_MOVE_PX && totalDy < TAP_MOVE_PX) {
+          if (!(this.gameService as any).paused && !(this.gameService as any).gameOver) {
+            // swap to direct method if available: this.gameService.rotate()
+            this.gameService.handleKey('ArrowUp');
           }
         }
+        // else: drag moves already applied in onMove
       }
     });
 
     this.gesture.enable(true);
+
+    window.addEventListener('beforeunload', cancelLongPress);
+
     this.refreshScores();
     this.gameService.onGameOver = () => this.refreshScores();
 

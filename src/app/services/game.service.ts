@@ -499,4 +499,8 @@ export class GameService {
     return this.score;
   }
 
+  public getBoardCols(): number {
+    return COLS;
+  }
+
 }
