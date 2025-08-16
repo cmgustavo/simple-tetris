@@ -11,15 +11,17 @@ import {StatusBar, Style} from '@capacitor/status-bar';
 })
 export class AppComponent {
   constructor(private platform: Platform) {
-    this.initializeApp();
+    this.platform.ready().then(() => this.configureStatusBar());
   }
 
-  initializeApp() {
-    this.platform.ready().then(async () => {
-      if (Capacitor.isNativePlatform()) {
-        await StatusBar.setOverlaysWebView({overlay: false}); // <- key line
-        await StatusBar.setStyle({style: Style.Dark});  // white icons
-      }
-    });
+  private async configureStatusBar() {
+    if (!Capacitor.isNativePlatform()) return; // skip on web/ionic serve
+    try {
+      await StatusBar.setOverlaysWebView({ overlay: false });
+
+      await StatusBar.setStyle({ style: Style.Light }); // white icons
+    } catch (e) {
+      console.warn('StatusBar setup failed', e);
+    }
   }
 }
