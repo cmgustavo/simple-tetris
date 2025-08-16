@@ -37,24 +37,53 @@ ion-item {
   text-shadow: none !important;
 }
 
-/* Custom button styles */
-ion-button {
-  height: 38px;
-  font-weight: 500;
+/* Global Typography Settings */
+:root {
+  --ion-font-size-base: 16px;  /* Base font size */
+}
+
+/* Increase font size for form elements and labels */
+ion-label,
+ion-note {
+  font-size: 1.1rem !important;
+}
+
+ion-input,
+ion-textarea,
+ion-select,
+ion-datetime {
+  font-size: 1.1rem !important;
+}
+
+/* Increase font size for list items and buttons */
+ion-item {
   font-size: 1.1rem;
 }
 
-:root {
-  --app-bg-0: #a8ff78;
-  --app-bg-1: #78ffd6;
-  --app-bg-2: #5ad1ff;
+/* For form fields */
+.item-input {
+  font-size: 1.1rem;
 }
 
-/* app background surface */
-body {
-  background: radial-gradient(1200px 800px at 10% 10%, var(--app-bg-0), transparent 60%),
-  radial-gradient(1200px 800px at 90% 20%, var(--app-bg-1), transparent 60%),
-  radial-gradient(1200px 800px at 50% 100%, var(--app-bg-2), transparent 60%),
-  var(--ion-background-color);
-  background-attachment: fixed;
+/* Custom button styles */
+ion-button {
+  height: 48px;
+  font-weight: 500;
+  font-size: 1.1rem;
+}
+.custom-small-button {
+  font-size: 0.8rem !important; /* Adjusted size */
+}
+
+.action-small-button {
+  height: 1.8rem !important;
+  font-size: 0.5rem !important; /* Adjusted size */
+  margin-left: 0.6rem !important;
+  cursor: pointer !important; /* Pointer cursor */
+}
+
+.action-small-button ion-icon {
+  height: 0.8rem !important;
+  padding: 0.4rem !important;
+  font-size: 1.2rem !important; /* Adjusted icon size */
 }

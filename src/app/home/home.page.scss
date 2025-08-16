@@ -5,8 +5,14 @@ canvas {
 }
 
 .container-canvas {
-  width: 100%;
   text-align: center;
+  /* Gradient background for the canvas container */
+  background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-width: 300px;
+  margin: 0 auto;
 }
 
 #gameCanvas, .gesture-area {
@@ -21,17 +27,6 @@ canvas#gameCanvas {
   height: auto;
 }
 
-.next-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 10px;
-
-  canvas {
-    background-color: #fff;
-  }
-}
-
 .score-label {
   font-weight: bold;
   font-size: 16px;
@@ -41,11 +36,10 @@ canvas#gameCanvas {
 
 .top-ui-bar {
   display: flex;
-  justify-content: space-around;
-  align-items: center;
-  width: 100%;
-  max-width: 340px;
-  margin: 10px auto 12px auto;
+  justify-content: space-between;
+  align-items: start;
+  max-width: 300px;
+  margin: 10px auto 20px auto;
 }
 
 .next-box, .score-box {
@@ -54,29 +48,28 @@ canvas#gameCanvas {
   align-items: center;
 }
 
-.label {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 4px;
-  color: #333;
-}
+.score-box {
+  margin-top: 10px;
+  text-align: right;
+  margin-right: 10px;
 
-.score {
-  font-size: 18px;
-  font-weight: bold;
-  color: #222;
+  .label {
+    font-size: 14px;
+    font-weight: 400;
+    margin-bottom: 4px;
+    color: #333;
+  }
+
+  .score {
+    font-size: 14px;
+    font-weight: bold;
+    color: #222;
+  }
 }
 
 .buttons-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-ion-button {
-  --padding-start: 8px;
-  --padding-end: 8px;
-  font-size: 14px;
+  text-align: center;
+  margin: 20px auto;
 }
 
 .retro-bar {

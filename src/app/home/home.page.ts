@@ -26,6 +26,7 @@ export class HomePage implements AfterViewInit, OnDestroy {
   public highScores: ScoreEntry[] = [];
   public isPaused: boolean = true; // game starts in paused state
   public gameStarted = false;
+  public gameFinished = false;
   private softDropTimeout: any;
   private isSoftDropping = false;
 
@@ -209,6 +210,14 @@ export class HomePage implements AfterViewInit, OnDestroy {
   };
 
   pauseOrResume() {
+    if (!this.gameFinished) {
+      this.gameFinished = this.gameService.isGameOver();
+      if (this.gameFinished) {
+        this.gameStarted = false;
+        this.isPaused = true;
+        return;
+      }
+    }
     this.isPaused = !this.isPaused;
     this.gameService.togglePause();
   }
@@ -225,7 +234,9 @@ export class HomePage implements AfterViewInit, OnDestroy {
   }
 
   goToSettings() {
-    this.pauseOrResume();
+    if (!this.isPaused) {
+      this.pauseOrResume();
+    }
     this.router.navigate(['/settings']);
   }
 

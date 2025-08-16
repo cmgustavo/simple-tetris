@@ -1,4 +1,4 @@
-<ion-header [translucent]="true">
+<ion-header>
   <ion-toolbar>
     <ion-title>
       Tetris
@@ -7,52 +7,56 @@
       <ion-button (click)="goToSettings()">
         <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
       </ion-button>
+      <ion-button (click)="pauseOrResume()" [disabled]="!gameStarted">
+        @if (gameStarted && !isPaused) {
+          <ion-icon slot="icon-only" name="pause-outline"></ion-icon>
+        } @else {
+          <ion-icon slot="icon-only" name="play-outline"></ion-icon>
+        }
+      </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
+<ion-content [fullscreen]="false">
   <ion-header collapse="condense">
     <ion-toolbar>
       <ion-title size="large">Tetris</ion-title>
-    <ion-buttons slot="end">
-      <ion-button (click)="goToSettings()">
-        <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
+      <ion-buttons slot="end">
+        <ion-button (click)="goToSettings()">
+          <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
+        </ion-button>
+      </ion-buttons>
     </ion-toolbar>
   </ion-header>
 
   <div class="top-ui-bar">
     <div class="next-box">
-      <canvas #nextCanvas width="80" height="80"></canvas>
+      <canvas #nextCanvas width="85" height="80"></canvas>
     </div>
-
     <div class="score-box">
-      <div class="label">Score</div>
-      <div class="score">{{ score }}</div>
-    </div>
-    <div class="buttons-box">
-      <ion-button size="small" [disabled]="!gameStarted" (click)="pauseOrResume()">
-        {{ isPaused ? 'Resume' : 'Pause' }}
-      </ion-button>
-      <ion-button
-        size="small"
-        color="success"
-        (click)="newGame()"
-        [disabled]="gameStarted && !isPaused"
-      >
-        <ion-icon name="play-outline"></ion-icon>
-        Start
-      </ion-button>
+      <div class="label">Higher Score: <span class="score">{{ highScores.length ? highScores[0].score : '0' }}</span>
+      </div>
+      <div class="label">Current Score: <span class="score">{{ score }}</span></div>
+      <div class="label">
+        Game: {{ gameStarted ? (isPaused ? 'Paused' : 'Playing') : 'Not Started' }}
+      </div>
     </div>
   </div>
 
   <div class="container-canvas">
-  <div #gestureArea class="gesture-area">
-    <canvas #gameCanvas id="gameCanvas"></canvas>
+    <div #gestureArea class="gesture-area">
+      <canvas #gameCanvas id="gameCanvas"></canvas>
+    </div>
   </div>
+
+  <div class="buttons-box">
+    <ion-button fill="clear" size="small" (click)="newGame()" [disabled]="gameStarted && !isPaused">
+      <ion-icon slot="start" name="play-outline"></ion-icon>
+      Start a new Game
+    </ion-button>
   </div>
+
 
   <!--
   <div class="retro-bar">

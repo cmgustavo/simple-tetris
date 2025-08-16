@@ -343,7 +343,7 @@ export class GameService {
       const centerY = (ROWS * this.blockSize) / 2;
 
       this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-      this.ctx.fillRect(0, centerY - 35, COLS * this.blockSize, 60);
+      this.ctx.fillRect(this.blockSize, centerY - 35, (COLS - 2) * this.blockSize, 55);
 
       this.ctx.fillStyle = '#fff';
       this.ctx.font = '20px Arial';
@@ -358,7 +358,7 @@ export class GameService {
 
       // Dark background box
       this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-      this.ctx.fillRect(0, centerY - 35, COLS * this.blockSize, 80);
+      this.ctx.fillRect(this.blockSize, centerY - 35, (COLS - 2) * this.blockSize, 85);
 
       // "Game Over" text
       this.ctx.fillStyle = '#fff';
@@ -501,6 +501,10 @@ export class GameService {
 
   public getBoardCols(): number {
     return COLS;
+  }
+
+  public isGameOver(): boolean {
+    return this.gameOver;
   }
 
 }
