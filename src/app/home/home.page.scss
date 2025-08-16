@@ -1,3 +1,8 @@
+/* Only change background on Home by reading the --home-gradient variable */
+ion-content.home-bg {
+  --background: var(--home-gradient);
+}
+
 canvas {
   background-color: #fff;
   border: 1px solid #ccc;

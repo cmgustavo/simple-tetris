@@ -3,6 +3,7 @@ import {Platform} from '@ionic/angular';
 import {IonApp, IonRouterOutlet} from '@ionic/angular/standalone';
 import {Capacitor} from '@capacitor/core';
 import {StatusBar, Style} from '@capacitor/status-bar';
+import {ThemeService} from "./services/theme.service";
 
 @Component({
   selector: 'app-root',
@@ -10,16 +11,20 @@ import {StatusBar, Style} from '@capacitor/status-bar';
   imports: [IonApp, IonRouterOutlet],
 })
 export class AppComponent {
-  constructor(private platform: Platform) {
-    this.platform.ready().then(() => this.configureStatusBar());
+  constructor(
+    private platform: Platform,
+    private themeService: ThemeService
+  ) {
+    this.platform.ready().then(() => this.bootstrap());
   }
 
-  private async configureStatusBar() {
-    if (!Capacitor.isNativePlatform()) return; // skip on web/ionic serve
+  private async bootstrap() {
     try {
-      await StatusBar.setOverlaysWebView({ overlay: false });
-
-      await StatusBar.setStyle({ style: Style.Light }); // white icons
+      if (Capacitor.isNativePlatform()) {
+        await StatusBar.setOverlaysWebView({ overlay: false });
+        await StatusBar.setStyle({ style: Style.Light });
+      }
+      await this.themeService.init();
     } catch (e) {
       console.warn('StatusBar setup failed', e);
     }

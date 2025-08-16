@@ -1,4 +1,4 @@
-<ion-header>
+<ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
       <ion-back-button default-href="#/home"></ion-back-button>
@@ -7,7 +7,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="false">
+<ion-content [fullscreen]="true">
   <ion-header collapse="condense">
     <ion-toolbar>
       <ion-buttons slot="start">
@@ -18,6 +18,30 @@
   </ion-header>
 
   <ion-list>
+    <!-- Theme -->
+    <ion-item-group>
+      <ion-item-divider>
+        <ion-label>Theme</ion-label>
+      </ion-item-divider>
+      <ion-list-header>
+        <ion-label>Home background</ion-label>
+      </ion-list-header>
+
+      <!-- Bind to current theme; update on change -->
+      <ion-radio-group
+        [value]="(themeService.themeId$ | async)"
+        (ionChange)="onThemeChange($event)"
+      >
+        <ion-item *ngFor="let t of options"
+                  detail="false"
+                  (click)="selectTheme(t.id)">
+          <ion-radio slot="start" [value]="t.id"></ion-radio>
+          <ion-label>{{ t.name }}</ion-label>
+          <div class="theme-swatch" slot="end" [style.background-image]="t.preview"></div>
+        </ion-item>
+      </ion-radio-group>
+    </ion-item-group>
+
     <!-- Scores -->
     <ion-item-group>
       <ion-item-divider>

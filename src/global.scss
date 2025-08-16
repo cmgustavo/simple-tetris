@@ -25,6 +25,8 @@
 @import "@ionic/angular/css/text-transformation.css";
 @import "@ionic/angular/css/flex-utils.css";
 
+/* Custom CSS for Ionic components */
+
 ion-item {
   --transition: none;
 }
@@ -37,10 +39,20 @@ ion-item {
   text-shadow: none !important;
 }
 
-/* Global Typography Settings */
 :root {
   --ion-font-size-base: 16px;  /* Base font size */
+  /* Used by Home page to paint ion-content background */
+  --home-gradient: none;
 }
+
+/* Optional tiny preview swatches in Settings list */
+.theme-swatch {
+  width: 36px;
+  height: 24px;
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.06) inset;
+}
+
 
 /* Increase font size for form elements and labels */
 ion-label,

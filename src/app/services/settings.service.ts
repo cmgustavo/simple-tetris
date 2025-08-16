@@ -1,8 +1,6 @@
 import {Injectable} from '@angular/core';
 import {Preferences} from '@capacitor/preferences';
 
-export type ThemeOption = 'system' | 'light' | 'dark';
-
 export interface DifficultyOption {
   key: 'easy' | 'normal' | 'hard';
   label: string;
@@ -22,15 +20,6 @@ const KEYS = {
 export class SettingsService {
 
   constructor() {
-  }
-
-  async getTheme(): Promise<ThemeOption> {
-    const {value} = await Preferences.get({key: KEYS.THEME});
-    return (value as ThemeOption) || 'system';
-  }
-
-  async setTheme(theme: ThemeOption) {
-    await Preferences.set({key: KEYS.THEME, value: theme});
   }
 
   async getBackgroundKey(): Promise<string> {

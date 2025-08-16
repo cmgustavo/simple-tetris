@@ -1,4 +1,4 @@
-<ion-header>
+<ion-header [translucent]="true">
   <ion-toolbar>
     <ion-title>
       Tetris
@@ -18,7 +18,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="false">
+<ion-content [fullscreen]="true" [class]="(themeService.themeClass$ | async) + ' home-bg'">
   <ion-header collapse="condense">
     <ion-toolbar>
       <ion-title size="large">Tetris</ion-title>
@@ -51,7 +51,7 @@
   </div>
 
   <div class="buttons-box">
-    <ion-button fill="clear" size="small" (click)="newGame()" [disabled]="gameStarted && !isPaused">
+    <ion-button size="small" (click)="newGame()" [disabled]="gameStarted && !isPaused">
       <ion-icon slot="start" name="play-outline"></ion-icon>
       Start a new Game
     </ion-button>

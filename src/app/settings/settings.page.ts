@@ -1,13 +1,14 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, OnDestroy} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {AlertController, IonicModule, ModalController, Platform} from "@ionic/angular";
-import {SettingsService, DifficultyOption, ThemeOption} from '../services/settings.service';
+import {SettingsService, DifficultyOption} from '../services/settings.service';
 import {ScoresService} from '../services/scores.service';
 import {AppInfoService} from '../services/app-info.service';
 import {HighScoresComponent} from '../components/high-scores/high-scores.component';
 import {ScoreEntry} from "../services/storage.service";
-
+import {Subject} from 'rxjs';
+import {ThemeService, ThemeOption} from '../services/theme.service';
 
 @Component({
   selector: 'app-settings',
@@ -16,22 +17,21 @@ import {ScoreEntry} from "../services/storage.service";
   standalone: true,
   imports: [IonicModule, CommonModule, FormsModule],
 })
-export class SettingsPage implements OnInit {
-  theme: ThemeOption = 'system';
-  backgrounds = [
-    {key: 'mintSky', var0: '#a8ff78', var1: '#78ffd6', var2: '#5ad1ff'},
-    {key: 'pastelSun', var0: '#ffd8a8', var1: '#ffc6ff', var2: '#ff8fab'},
-    {key: 'ocean', var0: '#89cff0', var1: '#a9def9', var2: '#84dcc6'},
-    {key: 'mauve', var0: '#cdb4db', var1: '#ffc8dd', var2: '#ffafcc'},
-    {key: 'sage', var0: '#d8e2dc', var1: '#bde0fe', var2: '#a2d2ff'},
-    {key: 'citrus', var0: '#ffe066', var1: '#ffd43b', var2: '#ffa94d'},
-    {key: 'violet', var0: '#b197fc', var1: '#9775fa', var2: '#845ef7'},
-    {key: 'teal', var0: '#96f2d7', var1: '#63e6be', var2: '#38d9a9'},
-    {key: 'rose', var0: '#ffd1dc', var1: '#ffcad4', var2: '#f4acb7'},
-    {key: 'space', var0: '#3a0ca3', var1: '#4361ee', var2: '#4cc9f0'},
-  ];
-  selectedBackground = 'mintSky';
-  bgAnimated = true;
+export class SettingsPage implements OnInit, OnDestroy {
+
+  options: ThemeOption[] = this.themeService.getThemeOptions();
+  private destroy$ = new Subject<void>();
+
+  onThemeChange(ev: CustomEvent) {
+    console.log(ev);
+    const id = ev.detail?.value as ReturnType<ThemeService['getThemeOptions']>[number]['id'];
+    if (id) this.themeService.setTheme(id);
+  }
+
+  selectTheme(id: ThemeOption['id']) {
+    // Update immediately when the row is tapped
+    this.themeService.setTheme(id);
+  }
 
   difficultyIndex = 1; // 0=Easy, 1=Normal, 2=Hard
   difficultyLabel = 'Normal';
@@ -49,14 +49,15 @@ export class SettingsPage implements OnInit {
               private modalCtrl: ModalController,
               private alertCtrl: AlertController,
               private appInfo: AppInfoService,
-              private platform: Platform) {
+              private platform: Platform,
+              public themeService: ThemeService
+  ) {
   }
 
   async ngOnInit() {
+    this.options = this.themeService.getThemeOptions();
+
     // load persisted values
-    this.theme = await this.settings.getTheme();
-    this.selectedBackground = await this.settings.getBackgroundKey();
-    this.bgAnimated = await this.settings.getBgAnimated();
     const storedDiff = await this.settings.getDifficulty();
     const idx = this.difficultyMap.findIndex(d => d.key === storedDiff.key);
     this.difficultyIndex = idx >= 0 ? idx : 1;
@@ -64,27 +65,11 @@ export class SettingsPage implements OnInit {
 
     // version from service (reads environment or package metadata)
     this.appVersion = this.appInfo.getVersion();
-
-    // apply on first load
-    this.applyTheme(this.theme);
-    this.applyBackground(this.selectedBackground, this.bgAnimated);
   }
 
-  onThemeChange(next: ThemeOption) {
-    this.applyTheme(next);
-    this.settings.setTheme(next);
-  }
-
-  setBackground(key: string) {
-    this.selectedBackground = key;
-    this.applyBackground(key, this.bgAnimated);
-    this.settings.setBackgroundKey(key);
-  }
-
-  toggleBgAnimated(on: boolean) {
-    this.bgAnimated = on;
-    this.applyBackground(this.selectedBackground, on);
-    this.settings.setBgAnimated(on);
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   onDifficultyChange(idx: number) {
@@ -113,7 +98,7 @@ export class SettingsPage implements OnInit {
       header: 'Clear High Scores',
       message: 'This will permanently delete all stored high scores on this device.',
       buttons: [
-        { text: 'Cancel', role: 'cancel' },
+        {text: 'Cancel', role: 'cancel'},
         {
           text: 'Delete',
           role: 'destructive',
@@ -125,24 +110,4 @@ export class SettingsPage implements OnInit {
     });
     await alert.present();
   }
-
-  // --- helpers to apply UI changes ---
-  private applyTheme(theme: ThemeOption) {
-    const body = document.body;
-    body.classList.remove('dark');
-    if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      body.classList.add('dark');
-    }
-  }
-
-  private applyBackground(key: string, animate: boolean) {
-    const def = this.backgrounds.find(b => b.key === key) ?? this.backgrounds[0];
-    const el = document.body; // or a dedicated app wrapper
-    el.style.setProperty('--app-bg-0', def.var0);
-    el.style.setProperty('--app-bg-1', def.var1);
-    el.style.setProperty('--app-bg-2', def.var2);
-
-    el.classList.toggle('bg-animated', !!animate);
-  }
-
 }

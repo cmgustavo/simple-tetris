@@ -5,6 +5,7 @@ import {IonicModule, GestureController, Gesture, GestureDetail} from '@ionic/ang
 import {CommonModule} from '@angular/common';
 import {ScoreEntry} from '../services/storage.service';
 import {ScoresService} from '../services/scores.service';
+import {ThemeService} from "../services/theme.service";
 import {App} from "@capacitor/app";
 
 @Component({
@@ -34,7 +35,8 @@ export class HomePage implements AfterViewInit, OnDestroy {
     private gameService: GameService,
     private gestureCtrl: GestureController,
     private scoresService: ScoresService,
-    private router: Router) {
+    private router: Router,
+    public themeService: ThemeService) {
   }
 
   async ngAfterViewInit() {
@@ -234,7 +236,7 @@ export class HomePage implements AfterViewInit, OnDestroy {
   }
 
   goToSettings() {
-    if (!this.isPaused) {
+    if (!this.isPaused && this.gameStarted) {
       this.pauseOrResume();
     }
     this.router.navigate(['/settings']);
