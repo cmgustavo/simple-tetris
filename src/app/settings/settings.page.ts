@@ -36,7 +36,7 @@ export class SettingsPage implements OnInit, OnDestroy {
   difficultyIndex = 1; // 0=Easy, 1=Normal, 2=Hard
   difficultyLabel = 'Normal';
 
-  appVersion = '1.0.0';
+  public appVersion = '';
 
   private difficultyMap: DifficultyOption[] = [
     {key: 'easy', label: 'Easy', dropMs: 900},

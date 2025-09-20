@@ -40,7 +40,7 @@ ion-item {
 }
 
 :root {
-  --ion-font-size-base: 16px;  /* Base font size */
+  --ion-font-size-base: 16px; /* Base font size */
   /* Used by Home page to paint ion-content background */
   --home-gradient: none;
 }
@@ -50,7 +50,7 @@ ion-item {
   width: 36px;
   height: 24px;
   border-radius: 6px;
-  box-shadow: 0 0 0 1px rgba(0,0,0,.06) inset;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .06) inset;
 }
 
 
@@ -83,6 +83,7 @@ ion-button {
   font-weight: 500;
   font-size: 1.1rem;
 }
+
 .custom-small-button {
   font-size: 0.8rem !important; /* Adjusted size */
 }
@@ -98,4 +99,293 @@ ion-button {
   height: 0.8rem !important;
   padding: 0.4rem !important;
   font-size: 1.2rem !important; /* Adjusted icon size */
+}
+
+.game-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.game-container canvas {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+
+/* Score bump/pulse */
+.score-bump.current {
+  position: relative;
+  display: inline-flex;
+  animation: scoreBump 380ms ease-out;
+}
+
+/* Colorful gradient-on-text, only while bumping */
+.score-bump.current,
+.score-bump .score-text {
+  /* Pastel palette (tweak freely) */
+  --sb1: #5e92fa; /* primary */
+  --sb2: #87ceeb; /* soft blue */
+  --sb3: #ffb3c6; /* soft pink */
+  --sb4: #b5ead7; /* mint */
+  --sb5: #ffd6a5; /* pastel orange */
+  background: linear-gradient(90deg, var(--sb1), var(--sb2), var(--sb3), var(--sb4), var(--sb5));
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; /* iOS/Safari */
+  text-shadow: 0 0 8px rgba(255, 255, 255, .35);
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, .1));
+  animation: scoreRainbow 900ms ease-out;
+}
+
+/* Subtle sparkles that fade out */
+.score-bump::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: -4px;
+  background: radial-gradient(2px 2px at 15% 35%, rgba(255, 255, 255, .95) 60%, transparent 61%),
+  radial-gradient(1.5px 1.5px at 80% 20%, rgba(255, 255, 255, .9) 60%, transparent 61%),
+  radial-gradient(1.8px 1.8px at 65% 75%, rgba(255, 255, 255, .9) 60%, transparent 61%),
+  radial-gradient(1.2px 1.2px at 40% 60%, rgba(255, 255, 255, .9) 60%, transparent 61%);
+  opacity: 0;
+  animation: sparkles 480ms ease-out;
+}
+
+@keyframes scoreBump {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Gradient shimmer */
+@keyframes scoreRainbow {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 100% 50%;
+  }
+}
+
+/* Sparkles fade & drift */
+@keyframes sparkles {
+  0% {
+    opacity: .9;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-4px) scale(1.15);
+  }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .score-bump,
+  .score-bump.current,
+  .score-bump::after {
+    animation: none !important;
+  }
+  .score-bump.current,
+  .score-bump .score-text {
+    -webkit-text-fill-color: currentColor; /* fall back to normal text */
+    background: none;
+    text-shadow: none;
+    filter: none;
+  }
+}
+
+/* ================================================================
+   1) lock-thud — tiny drop + pastel ring pulse
+   ================================================================= */
+.lock-thud {
+  animation: lockThud 120ms ease-out;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, .1));
+}
+
+.lock-thud::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: -4px; /* a hair bigger than the canvas */
+  border-radius: 12px;
+  /* pastel halo ring + soft center light */
+  background: radial-gradient(40% 40% at 50% 60%, rgba(255, 255, 255, .18), transparent 65%),
+  conic-gradient(from 0deg,
+      var(--sb1), var(--sb2), var(--sb3), var(--sb4), var(--sb5), var(--sb1));
+  mix-blend-mode: screen;
+  opacity: 0;
+  transform: scale(.96);
+  animation: thudRing 260ms ease-out;
+}
+
+/* ================================================================
+   2) line-flash — quick pastel “shine” sweep across the board
+   ================================================================= */
+.line-flash::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  left: -30%;
+  right: -30%;
+  /* moving shine (white) + pastel gradient under it */
+  background: linear-gradient(120deg, transparent 0%,
+    rgba(255, 255, 255, .15) 44%, rgba(255, 255, 255, .8) 50%,
+    rgba(255, 255, 255, .15) 56%, transparent 100%),
+  linear-gradient(90deg, var(--sb1), var(--sb2), var(--sb3), var(--sb4), var(--sb5));
+  background-size: 300% 100%, 100% 100%;
+  background-position: 0% 50%, 50% 50%;
+  mix-blend-mode: screen;
+  opacity: 0;
+  transform: translateX(-20%);
+  animation: lineSweep 360ms ease-out;
+}
+
+/* ================================================================
+   3) tetris-burst — celebratory burst + confetti sparkles
+   ================================================================= */
+:root {
+  --sb1: #5e92fa; /* primary */
+  --sb2: #87ceeb; /* soft blue */
+  --sb3: #ffb3c6; /* soft pink */
+  --sb4: #b5ead7; /* mint */
+  --sb5: #ffd6a5; /* pastel orange */
+}
+
+.tetris-burst {
+  position: relative; /* anchor pseudo-elements */
+  animation: tetrisBurst 520ms cubic-bezier(.2, .7, 0, 1.1);
+  will-change: transform, filter;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, .25));
+}
+
+/* Big colorful ring (works even without mask; mask just makes it cleaner) */
+.tetris-burst::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 16px;
+  z-index: 2;
+  /* layer 1: bright white thin ring so it's ALWAYS visible */
+  /* layer 2: colorful conic gradient under it */
+  background: radial-gradient(circle at 50% 50%,
+    transparent 58%, rgba(255, 255, 255, .95) 60%, transparent 63%),
+  conic-gradient(from 0deg,
+      var(--sb1), var(--sb2), var(--sb3), var(--sb4), var(--sb5), var(--sb1));
+  /* refine with mask when supported (mobile Safari/Chromium) */
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 56%, black 57%);
+  mask-image: radial-gradient(circle at 50% 50%, transparent 56%, black 57%);
+  opacity: .95;
+  transform: scale(.9);
+  animation: burstRing 520ms cubic-bezier(.2, .7, 0, 1.05);
+}
+
+/* Confetti — solid pastel dots (no blend mode needed) */
+.tetris-burst::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  z-index: 3;
+  background: radial-gradient(2px 2px at 20% 30%, var(--sb3) 60%, transparent 61%),
+  radial-gradient(2px 2px at 75% 25%, var(--sb2) 60%, transparent 61%),
+  radial-gradient(2px 2px at 65% 70%, var(--sb4) 60%, transparent 61%),
+  radial-gradient(2px 2px at 35% 65%, var(--sb5) 60%, transparent 61%),
+  radial-gradient(1.8px 1.8px at 50% 45%, #ffffff 60%, transparent 61%),
+  radial-gradient(1.6px 1.6px at 30% 35%, #ffffff 60%, transparent 61%);
+  opacity: 0;
+  transform: translateY(2px) scale(.98);
+  animation: confettiPop 520ms ease-out;
+}
+
+/* Keyframes (unchanged but slightly longer) */
+@keyframes tetrisBurst {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes burstRing {
+  0% {
+    opacity: .95;
+    transform: scale(.9) rotate(0deg);
+    filter: blur(.2px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.25) rotate(12deg);
+    filter: blur(1.2px);
+  }
+}
+
+@keyframes confettiPop {
+  0% {
+    opacity: 0;
+    transform: translateY(2px) scale(.98) rotate(0deg);
+  }
+  25% {
+    opacity: .95;
+    transform: translateY(0) scale(1.02) rotate(2deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px) scale(1.08) rotate(6deg);
+  }
+}
+
+/* Make sure overlays render above the canvas */
+.tetris-burst::before,
+.tetris-burst::after {
+  pointer-events: none;
+}
+
+/* ===================== keyframes ===================== */
+@keyframes lockThud {
+  0% {
+    transform: translateY(-1px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes thudRing {
+  0% {
+    opacity: .55;
+    transform: scale(.96);
+    filter: blur(.2px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.10);
+    filter: blur(1.2px);
+  }
+}
+
+@keyframes lineSweep {
+  0% {
+    opacity: .0;
+    transform: translateX(-28%);
+  }
+  20% {
+    opacity: .95;
+    transform: translateX(-8%);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(28%);
+  }
 }

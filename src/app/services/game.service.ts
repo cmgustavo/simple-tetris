@@ -1,5 +1,7 @@
-import {Injectable} from '@angular/core';
+import {Injectable, NgZone} from '@angular/core';
 import {ScoresService} from './scores.service';
+import {HapticsService} from './haptics.service';
+import {SoundService} from './sound.service';
 
 const COLS = 12;
 const ROWS = 24;
@@ -61,7 +63,14 @@ export class GameService {
   private nextCtx: CanvasRenderingContext2D | null = null;
   public onScoreChange: ((score: number) => void) | null = null;
 
-  constructor(private scoresService: ScoresService) {
+  gameContainerEl?: HTMLElement; // set from component after ViewInit
+  onScore?: (delta: number) => void; // inject from component
+
+  constructor(
+    private scoresService: ScoresService,
+    private haptics: HapticsService,
+    private sound: SoundService,
+    private zone: NgZone) {
   }
 
   private notifyScoreChange() {
@@ -211,9 +220,13 @@ export class GameService {
 
     if (this.collides()) {
       this.currentPiece.y--;
+      // >>> Trigger haptics + sound for locking
+      this.onPieceLocked();
       this.merge();
+
       this.clearLines();
       this.spawnPiece();
+
 
       if (this.collides()) {
         this.gameOver = true;
@@ -390,6 +403,7 @@ export class GameService {
         this.currentPiece.y++;
         if (this.collides()) {
           this.currentPiece.y--;
+          this.onPieceLocked();
           this.merge();
           this.clearLines();
           this.spawnPiece();
@@ -435,6 +449,9 @@ export class GameService {
 
     this.score += linesCleared * 100;
     if (this.onScoreChange) this.onScoreChange(this.score);
+
+    // >>> Trigger haptics + sound for line clear / tetris
+    this.onLinesCleared(linesCleared);
 
     this.notifyScoreChange();
   }
@@ -505,6 +522,64 @@ export class GameService {
 
   public isGameOver(): boolean {
     return this.gameOver;
+  }
+
+  /** Call when the falling piece permanently locks into the board */
+  async onPieceLocked() {
+    // Haptics & thud
+    this.sound.play('lock');
+    this.haptics.impact(); // Light thud
+    this.bumpClass(this.gameContainerEl, 'lock-thud', 140);
+  }
+
+  /** Call when you’ve computed how many lines were cleared on this lock */
+  async onLinesCleared(cleared: number) {
+    if (!cleared) return;
+
+    // Per-line flash (you can also mark specific row DOM nodes if you render grid in DOM)
+    this.bumpClass(this.gameContainerEl, 'line-flash', 240);
+
+    if (cleared < 4) {
+      this.sound.play('line');
+      this.haptics.selection(); // a tiny click
+    } else {
+      // Tetris!
+      this.sound.play('tetris');
+      this.haptics.success();
+      this.bumpClass(this.gameContainerEl, 'tetris-burst', 520);
+    }
+
+    // Score example (tune to your rules)
+    const delta = this.scoreFor(cleared);
+    this.onScore?.(delta);
+  }
+
+  private scoreFor(cleared: number) {
+    switch (cleared) {
+      case 1:
+        return 40;
+      case 2:
+        return 100;
+      case 3:
+        return 300;
+      case 4:
+        return 1200; // Tetris
+      default:
+        return 0;
+    }
+  }
+
+  public bumpClass(el?: HTMLElement, cls?: string, ms = 300) {
+    if (!el || !cls) return;
+    this.zone.runOutsideAngular(() => {
+      el.classList.remove(cls);
+      (el as any).offsetWidth;
+      // next tick to restart animation
+      requestAnimationFrame(() => {
+        el.classList.add(cls);
+        setTimeout(() => el.classList.remove(cls), ms);
+      });
+    });
   }
 
 }

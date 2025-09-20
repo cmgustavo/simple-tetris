@@ -18,7 +18,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" [class]="(themeService.themeClass$ | async) + ' home-bg'">
+<ion-content [fullscreen]="true" [scrollY]="false" [class]="(themeService.themeClass$ | async) + ' home-bg'">
   <ion-header collapse="condense">
     <ion-toolbar>
       <ion-title size="large">Tetris</ion-title>
@@ -34,10 +34,10 @@
     <div class="next-box">
       <canvas #nextCanvas width="85" height="80"></canvas>
     </div>
-    <div class="score-box">
-      <div class="label">Higher Score: <span class="score">{{ highScores.length ? highScores[0].score : '0' }}</span>
+    <div class="score-box" id="scoreLabel" [class.score-bump]="scoreBump">
+      <div class="label">Higher Score: <span>{{ highScores.length ? highScores[0].score : '0' }}</span>
       </div>
-      <div class="label">Current Score: <span class="score">{{ score }}</span></div>
+      <div class="label current">Current Score: <span class="score-text">{{ score }}</span></div>
       <div class="label">
         Game: {{ gameStarted ? (isPaused ? 'Paused' : 'Playing') : 'Not Started' }}
       </div>
@@ -46,7 +46,9 @@
 
   <div class="container-canvas">
     <div #gestureArea class="gesture-area">
-      <canvas #gameCanvas id="gameCanvas"></canvas>
+      <div #gameContainer class="game-container">
+        <canvas #gameCanvas id="gameCanvas"></canvas>
+      </div>
     </div>
   </div>
 

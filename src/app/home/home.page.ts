@@ -1,11 +1,12 @@
 import {Component, ElementRef, ViewChild, AfterViewInit, OnDestroy} from '@angular/core';
 import {GameService} from '../services/game.service';
-import { Router } from '@angular/router';
+import {Router} from '@angular/router';
 import {IonicModule, GestureController, Gesture, GestureDetail} from '@ionic/angular';
 import {CommonModule} from '@angular/common';
 import {ScoreEntry} from '../services/storage.service';
 import {ScoresService} from '../services/scores.service';
 import {ThemeService} from "../services/theme.service";
+import {SoundService} from '../services/sound.service';
 import {App} from "@capacitor/app";
 
 @Component({
@@ -19,11 +20,13 @@ export class HomePage implements AfterViewInit, OnDestroy {
   @ViewChild('nextCanvas', {static: false}) nextCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('gestureArea', {static: true}) gestureArea!: ElementRef<HTMLElement>;
   @ViewChild('gameCanvas', {static: true}) canvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('gameContainer', { static: true }) gameContainer!: ElementRef<HTMLElement>;
 
   private gesture!: Gesture;
   private lastTapTime = 0;
 
   public score: number = 0;
+  public scoreBump = false;
   public highScores: ScoreEntry[] = [];
   public isPaused: boolean = true; // game starts in paused state
   public gameStarted = false;
@@ -31,17 +34,22 @@ export class HomePage implements AfterViewInit, OnDestroy {
   private softDropTimeout: any;
   private isSoftDropping = false;
 
+
   constructor(
     private gameService: GameService,
     private gestureCtrl: GestureController,
     private scoresService: ScoresService,
     private router: Router,
-    public themeService: ThemeService) {
+    public themeService: ThemeService,
+    private sounds: SoundService) {
   }
 
   async ngAfterViewInit() {
+    await this.sounds.preload();
     const canvas = this.canvasRef.nativeElement;
     const screenWidth = window.innerWidth;
+
+    this.gameService.gameContainerEl = this.gameContainer.nativeElement;
 
     // Set canvas width (e.g., max 300px)
     canvas.width = Math.min(300, screenWidth - 32);
@@ -65,12 +73,15 @@ export class HomePage implements AfterViewInit, OnDestroy {
 
     // keep UI synced with game service as you already do
     this.gameService.onScoreChange = (s) => {
+      if (this.score !== s) {
+        this.bumpScoreUI();
+      }
       this.score = s;
       this.scoresService.setCurrentScore(s); // keep persisting during play
     };
 
     // (optional) auto-pause when app backgrounds & persist score
-    App.addListener('appStateChange', ({ isActive }) => {
+    App.addListener('appStateChange', ({isActive}) => {
       if (!isActive) {
         this.isPaused = true;
         if (!this.gameService.isPaused()) this.gameService.togglePause();
@@ -104,7 +115,10 @@ export class HomePage implements AfterViewInit, OnDestroy {
     let longPressed = false;
 
     const cancelLongPress = () => {
-      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
     };
     const scheduleLongPress = () => {
       cancelLongPress();
@@ -281,5 +295,11 @@ export class HomePage implements AfterViewInit, OnDestroy {
     clearTimeout(this.softDropTimeout);
   }
 
-
+  private bumpScoreUI() {
+    this.scoreBump = false;
+    // let Angular flush
+    setTimeout(() => (this.scoreBump = true));
+    // remove class after anim ends
+    setTimeout(() => (this.scoreBump = false), 420);
+  }
 }
