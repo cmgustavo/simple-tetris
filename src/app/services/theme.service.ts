@@ -31,31 +31,31 @@ export class ThemeService {
     {
       id: 'aurora-mint',
       name: 'Aurora Mint',
-      preview: 'linear-gradient(135deg, #B5EAD7 0%, #A3C4F3 100%)',
+      preview: 'linear-gradient(165deg, #B5EAD7 0%, #A3C4F3 100%)',
       className: 'theme-aurora-mint',
     },
     {
       id: 'peachy-sky',
       name: 'Peachy Sky',
-      preview: 'linear-gradient(135deg, #FFDAC1 0%, #A3C4F3 100%)',
+      preview: 'linear-gradient(165deg, #FFDAC1 0%, #A3C4F3 100%)',
       className: 'theme-peachy-sky',
     },
     {
       id: 'lavender-breeze',
       name: 'Lavender Breeze',
-      preview: 'linear-gradient(135deg, #CBAACB 0%, #B5EAD7 100%)',
+      preview: 'linear-gradient(165deg, #CBAACB 0%, #B5EAD7 100%)',
       className: 'theme-lavender-breeze',
     },
     {
       id: 'sea-foam',
       name: 'Sea Foam',
-      preview: 'linear-gradient(135deg, #E2F0CB 0%, #B5EAD7 100%)',
+      preview: 'linear-gradient(165deg, #E2F0CB 0%, #B5EAD7 100%)',
       className: 'theme-sea-foam',
     },
     {
       id: 'sunset-sorbet',
       name: 'Sunset Sorbet',
-      preview: 'linear-gradient(135deg, #FFB3C6 0%, #FFD6A5 100%)',
+      preview: 'linear-gradient(165deg, #FFB3C6 0%, #FFD6A5 100%)',
       className: 'theme-sunset-sorbet',
     },
   ];
@@ -106,19 +106,19 @@ export class ThemeService {
 
     switch (id) {
       case 'aurora-mint':
-        gradient = 'linear-gradient(135deg, #B5EAD7 0%, #A3C4F3 100%)';
+        gradient = 'linear-gradient(165deg, #B5EAD7 0%, #A3C4F3 100%)';
         break;
       case 'peachy-sky':
-        gradient = 'linear-gradient(135deg, #FFDAC1 0%, #A3C4F3 100%)';
+        gradient = 'linear-gradient(165deg, #FFDAC1 0%, #A3C4F3 100%)';
         break;
       case 'lavender-breeze':
-        gradient = 'linear-gradient(135deg, #CBAACB 0%, #B5EAD7 100%)';
+        gradient = 'linear-gradient(165deg, #CBAACB 0%, #B5EAD7 100%)';
         break;
       case 'sea-foam':
-        gradient = 'linear-gradient(135deg, #E2F0CB 0%, #B5EAD7 100%)';
+        gradient = 'linear-gradient(165deg, #E2F0CB 0%, #B5EAD7 100%)';
         break;
       case 'sunset-sorbet':
-        gradient = 'linear-gradient(135deg, #FFB3C6 0%, #FFD6A5 100%)';
+        gradient = 'linear-gradient(165deg, #FFB3C6 0%, #FFD6A5 100%)';
         break;
     }
 

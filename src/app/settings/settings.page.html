@@ -24,7 +24,7 @@
         <ion-label>Theme</ion-label>
       </ion-item-divider>
       <ion-list-header>
-        <ion-label>Home background</ion-label>
+        <ion-label>Background</ion-label>
       </ion-list-header>
 
       <!-- Bind to current theme; update on change -->
@@ -33,7 +33,7 @@
         (ionChange)="onThemeChange($event)"
       >
         <ion-item *ngFor="let t of options"
-                  detail="false"
+                  [detail]="false"
                   (click)="selectTheme(t.id)">
           <ion-radio slot="start" [value]="t.id"></ion-radio>
           <ion-label>{{ t.name }}</ion-label>
@@ -48,11 +48,11 @@
         <ion-label>Scores</ion-label>
       </ion-item-divider>
 
-      <ion-item button="View High Scores" (click)="openHighScores()">
+      <ion-item (click)="openHighScores()">
         <ion-label>View High Scores</ion-label>
       </ion-item>
 
-      <ion-item button="Clear High Scores" (click)="confirmClearScores()">
+      <ion-item (click)="confirmClearScores()">
         <ion-label color="danger">Clear High Scores</ion-label>
       </ion-item>
     </ion-item-group>
