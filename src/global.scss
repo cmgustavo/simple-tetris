@@ -388,3 +388,103 @@ ion-button {
     transform: translateX(28%);
   }
 }
+
+/* ===================== BUTTONS ===================== */
+
+/* === Compact, elegant IonButton defaults === */
+:root {
+  --btn-radius: 10px;
+  --btn-font-size: 0.92rem;
+  --btn-pad-x: 12px;
+  --btn-pad-y: 6px;
+}
+
+/* Make all buttons more compact by default */
+ion-button {
+  /* Size & shape */
+  --border-radius: var(--btn-radius);
+  --padding-start: var(--btn-pad-x);
+  --padding-end: var(--btn-pad-x);
+  --padding-top: var(--btn-pad-y);
+  --padding-bottom: var(--btn-pad-y);
+  height: auto;           /* let padding drive height */
+  min-height: 32px;       /* keep target > 32px for accessibility */
+  font-size: var(--btn-font-size);
+  letter-spacing: .2px;
+  font-weight: 500;
+
+  /* Clean surface */
+  --box-shadow: none;
+  --ripple-color: color-mix(in srgb, currentColor 18%, transparent);
+
+  /* Smooth hover on desktop */
+  transition: background-color .15s ease, border-color .15s ease, transform .05s ease;
+}
+
+@media (pointer: fine) {
+  ion-button:hover { filter: brightness(1.02); }
+  ion-button:active { transform: translateY(0.5px); }
+}
+
+/* Focus ring (inside the shadow DOM) */
+ion-button::part(native):focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+
+/* Solid, Outline, Clear: refined palettes */
+ion-button[fill="solid"] {
+  --background: var(--ion-color-primary);
+  --color: var(--ion-color-primary-contrast);
+}
+
+ion-button[fill="outline"] {
+  --background: transparent;
+  --border-color: color-mix(in srgb, currentColor 22%, transparent);
+  --color: var(--ion-text-color);
+}
+
+ion-button[fill="clear"] {
+  --background: transparent;
+  --color: var(--ion-text-color);
+}
+
+/* Ghost (subtle) button: use class="ghost" */
+ion-button.ghost {
+  --background: color-mix(in srgb, var(--ion-text-color) 6%, transparent);
+  --color: var(--ion-text-color);
+  --border-radius: 9999px; /* pill */
+}
+
+/* Icon-only: tidy circular “chip” buttons (class="icon-only") */
+ion-button.icon-only {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --padding-top: 6px;
+  --padding-bottom: 6px;
+  --border-radius: 9999px;
+}
+ion-button.icon-only ion-icon { font-size: 18px; margin: 0; }
+
+/* Smaller buttons inside toolbars (less padding) */
+ion-toolbar ion-buttons ion-button {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --border-radius: 8px;
+}
+
+/* iOS vs MD tiny polish (optional) */
+.ios ion-button { font-weight: 600; }
+.md  ion-button { font-weight: 500; }
+
+/* Dark mode tuning for subtle backgrounds */
+@media (prefers-color-scheme: dark) {
+  ion-button.ghost {
+    --background: color-mix(in srgb, var(--ion-text-color) 12%, transparent);
+  }
+  ion-button[fill="outline"] {
+    --border-color: color-mix(in srgb, currentColor 28%, transparent);
+  }
+}
+

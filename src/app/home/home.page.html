@@ -7,13 +7,6 @@
       <ion-button (click)="goToSettings()">
         <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
       </ion-button>
-      <ion-button (click)="pauseOrResume()" [disabled]="!gameStarted">
-        @if (gameStarted && !isPaused) {
-          <ion-icon slot="icon-only" name="pause-outline"></ion-icon>
-        } @else {
-          <ion-icon slot="icon-only" name="play-outline"></ion-icon>
-        }
-      </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -35,8 +28,13 @@
       <canvas #nextCanvas width="85" height="80"></canvas>
     </div>
     <div class="score-box">
-      <div class="label">Score</div>
-      <div id="scoreLabel" class="number" [class.score-bump]="scoreBump">{{ score }}</div>
+    @if (gameStarted) {
+        <div class="label">Score</div>
+        <div id="scoreLabel" class="number" [class.score-bump]="scoreBump">{{ score }}</div>
+    } @else {
+      <div class="label">Higher Score</div>
+      <div class="number">{{highScores.length ? highScores[0].score : '0'}}</div>
+    }
     </div>
   </div>
 
@@ -47,11 +45,22 @@
       </div>
     </div>
   </div>
-
-  <div class="buttons-box">
-    <ion-button size="small" (click)="newGame()" [disabled]="gameStarted && !isPaused">
+  <div class="button-box">
+    @if (!gameStarted) {
+    <ion-button (click)="newGame()" fill="outline" shape="round">
       <ion-icon slot="start" name="play-outline"></ion-icon>
       Start a new Game
     </ion-button>
+    } @else {
+    <ion-button (click)="pauseOrResume()" fill="outline" shape="round">
+      @if (!isPaused) {
+        <ion-icon slot="start" name="pause-outline"></ion-icon>
+        Pause Game
+      } @else {
+        <ion-icon slot="start" name="play-outline"></ion-icon>
+        Resume Game
+      }
+    </ion-button>
+    }
   </div>
 </ion-content>
