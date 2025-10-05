@@ -113,15 +113,14 @@ ion-button {
 }
 
 /* Score bump/pulse */
-.score-bump.current {
+.score-bump {
   position: relative;
   display: inline-flex;
   animation: scoreBump 380ms ease-out;
 }
 
 /* Colorful gradient-on-text, only while bumping */
-.score-bump.current,
-.score-bump .score-text {
+.score-bump {
   /* Pastel palette (tweak freely) */
   --sb1: #5e92fa; /* primary */
   --sb2: #87ceeb; /* soft blue */
