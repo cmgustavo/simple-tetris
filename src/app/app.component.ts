@@ -3,6 +3,7 @@ import {Platform} from '@ionic/angular';
 import {IonApp, IonRouterOutlet} from '@ionic/angular/standalone';
 import {Capacitor} from '@capacitor/core';
 import {StatusBar, Style} from '@capacitor/status-bar';
+import {ScreenOrientation} from '@capacitor/screen-orientation';
 import {ThemeService} from "./services/theme.service";
 
 @Component({
@@ -21,8 +22,9 @@ export class AppComponent {
   private async bootstrap() {
     try {
       if (Capacitor.isNativePlatform()) {
-        await StatusBar.setOverlaysWebView({ overlay: false });
-        await StatusBar.setStyle({ style: Style.Light });
+        await ScreenOrientation.lock({ orientation: 'portrait' });
+        await StatusBar.setOverlaysWebView({overlay: false});
+        await StatusBar.setStyle({style: Style.Light});
       }
       await this.themeService.init();
     } catch (e) {

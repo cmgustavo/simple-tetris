@@ -4,7 +4,22 @@ import {HapticsService} from './haptics.service';
 import {SoundService} from './sound.service';
 
 const COLS = 10;
-const ROWS = 20;
+//const ROWS = 20;
+const BLOCK_SIZE = 25; // px per block (adjust to your design)
+
+// Get the available height (in pixels)
+const screenHeight = window.innerHeight;
+
+// Reserve some space for UI elements (score, buttons, etc.)
+const reservedSpace = 200; // px
+const availableHeight = screenHeight - reservedSpace;
+
+// Compute how many rows fit
+let ROWS = Math.floor(availableHeight / BLOCK_SIZE);
+
+// Clamp it to a reasonable range
+if (ROWS > 20) ROWS = 20;
+if (ROWS < 14) ROWS = 14;
 
 const COLORS = [
   '#A3C4F3', // Soft Blue
