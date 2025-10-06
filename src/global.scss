@@ -77,33 +77,10 @@ ion-item {
   font-size: 1.1rem;
 }
 
-/* Custom button styles */
-ion-button {
-  height: 48px;
-  font-weight: 500;
-  font-size: 1.1rem;
-}
-
-.custom-small-button {
-  font-size: 0.8rem !important; /* Adjusted size */
-}
-
-.action-small-button {
-  height: 1.8rem !important;
-  font-size: 0.5rem !important; /* Adjusted size */
-  margin-left: 0.6rem !important;
-  cursor: pointer !important; /* Pointer cursor */
-}
-
-.action-small-button ion-icon {
-  height: 0.8rem !important;
-  padding: 0.4rem !important;
-  font-size: 1.2rem !important; /* Adjusted icon size */
-}
-
 .game-container {
   position: relative;
   overflow: hidden;
+  display: inline-block;
 }
 
 .game-container canvas {
@@ -204,154 +181,10 @@ ion-button {
    1) lock-thud — tiny drop + pastel ring pulse
    ================================================================= */
 .lock-thud {
-  animation: lockThud 120ms ease-out;
+  animation: lockThud 100ms ease-out;
   filter: drop-shadow(0 1px 0 rgba(0, 0, 0, .1));
 }
 
-.lock-thud::after {
-  content: '';
-  pointer-events: none;
-  position: absolute;
-  inset: -4px; /* a hair bigger than the canvas */
-  border-radius: 12px;
-  /* pastel halo ring + soft center light */
-  background: radial-gradient(40% 40% at 50% 60%, rgba(255, 255, 255, .18), transparent 65%),
-  conic-gradient(from 0deg,
-      var(--sb1), var(--sb2), var(--sb3), var(--sb4), var(--sb5), var(--sb1));
-  mix-blend-mode: screen;
-  opacity: 0;
-  transform: scale(.96);
-  animation: thudRing 260ms ease-out;
-}
-
-/* ================================================================
-   2) line-flash — quick pastel “shine” sweep across the board
-   ================================================================= */
-.line-flash::after {
-  content: '';
-  pointer-events: none;
-  position: absolute;
-  top: -10%;
-  bottom: -10%;
-  left: -30%;
-  right: -30%;
-  /* moving shine (white) + pastel gradient under it */
-  background: linear-gradient(120deg, transparent 0%,
-    rgba(255, 255, 255, .15) 44%, rgba(255, 255, 255, .8) 50%,
-    rgba(255, 255, 255, .15) 56%, transparent 100%),
-  linear-gradient(90deg, var(--sb1), var(--sb2), var(--sb3), var(--sb4), var(--sb5));
-  background-size: 300% 100%, 100% 100%;
-  background-position: 0% 50%, 50% 50%;
-  mix-blend-mode: screen;
-  opacity: 0;
-  transform: translateX(-20%);
-  animation: lineSweep 360ms ease-out;
-}
-
-/* ================================================================
-   3) tetris-burst — celebratory burst + confetti sparkles
-   ================================================================= */
-:root {
-  --sb1: #5e92fa; /* primary */
-  --sb2: #87ceeb; /* soft blue */
-  --sb3: #ffb3c6; /* soft pink */
-  --sb4: #b5ead7; /* mint */
-  --sb5: #ffd6a5; /* pastel orange */
-}
-
-.tetris-burst {
-  position: relative; /* anchor pseudo-elements */
-  animation: tetrisBurst 520ms cubic-bezier(.2, .7, 0, 1.1);
-  will-change: transform, filter;
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, .25));
-}
-
-/* Big colorful ring (works even without mask; mask just makes it cleaner) */
-.tetris-burst::before {
-  content: '';
-  position: absolute;
-  inset: -6px;
-  border-radius: 16px;
-  z-index: 2;
-  /* layer 1: bright white thin ring so it's ALWAYS visible */
-  /* layer 2: colorful conic gradient under it */
-  background: radial-gradient(circle at 50% 50%,
-    transparent 58%, rgba(255, 255, 255, .95) 60%, transparent 63%),
-  conic-gradient(from 0deg,
-      var(--sb1), var(--sb2), var(--sb3), var(--sb4), var(--sb5), var(--sb1));
-  /* refine with mask when supported (mobile Safari/Chromium) */
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 56%, black 57%);
-  mask-image: radial-gradient(circle at 50% 50%, transparent 56%, black 57%);
-  opacity: .95;
-  transform: scale(.9);
-  animation: burstRing 520ms cubic-bezier(.2, .7, 0, 1.05);
-}
-
-/* Confetti — solid pastel dots (no blend mode needed) */
-.tetris-burst::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  z-index: 3;
-  background: radial-gradient(2px 2px at 20% 30%, var(--sb3) 60%, transparent 61%),
-  radial-gradient(2px 2px at 75% 25%, var(--sb2) 60%, transparent 61%),
-  radial-gradient(2px 2px at 65% 70%, var(--sb4) 60%, transparent 61%),
-  radial-gradient(2px 2px at 35% 65%, var(--sb5) 60%, transparent 61%),
-  radial-gradient(1.8px 1.8px at 50% 45%, #ffffff 60%, transparent 61%),
-  radial-gradient(1.6px 1.6px at 30% 35%, #ffffff 60%, transparent 61%);
-  opacity: 0;
-  transform: translateY(2px) scale(.98);
-  animation: confettiPop 520ms ease-out;
-}
-
-/* Keyframes (unchanged but slightly longer) */
-@keyframes tetrisBurst {
-  0% {
-    transform: scale(1);
-  }
-  30% {
-    transform: scale(1.18);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes burstRing {
-  0% {
-    opacity: .95;
-    transform: scale(.9) rotate(0deg);
-    filter: blur(.2px);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.25) rotate(12deg);
-    filter: blur(1.2px);
-  }
-}
-
-@keyframes confettiPop {
-  0% {
-    opacity: 0;
-    transform: translateY(2px) scale(.98) rotate(0deg);
-  }
-  25% {
-    opacity: .95;
-    transform: translateY(0) scale(1.02) rotate(2deg);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-6px) scale(1.08) rotate(6deg);
-  }
-}
-
-/* Make sure overlays render above the canvas */
-.tetris-burst::before,
-.tetris-burst::after {
-  pointer-events: none;
-}
-
-/* ===================== keyframes ===================== */
 @keyframes lockThud {
   0% {
     transform: translateY(-1px);
@@ -361,31 +194,48 @@ ion-button {
   }
 }
 
-@keyframes thudRing {
+/* ================================================================
+   2) line-flash — quick pastel “shine” sweep across the board
+   ================================================================= */
+.line-flash {
+  animation: lineFlash 300ms ease-out;
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .2));
+}
+
+@keyframes lineFlash {
   0% {
-    opacity: .55;
-    transform: scale(.96);
-    filter: blur(.2px);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.3;
+  }
+  80% {
+    opacity: 0.6;
   }
   100% {
-    opacity: 0;
-    transform: scale(1.10);
-    filter: blur(1.2px);
+    opacity: 1;
   }
 }
 
-@keyframes lineSweep {
+/* ================================================================
+   3) tetris-burst — celebratory burst + confetti sparkles
+   ================================================================= */
+
+.tetris-burst {
+  animation: tetrisBurst 520ms cubic-bezier(0.2, 0.7, 0, 1.1);
+  will-change: transform, filter;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.25));
+}
+
+@keyframes tetrisBurst {
   0% {
-    opacity: .0;
-    transform: translateX(-28%);
+    transform: scale(1);
   }
-  20% {
-    opacity: .95;
-    transform: translateX(-8%);
+  30% {
+    transform: scale(1.18);
   }
   100% {
-    opacity: 0;
-    transform: translateX(28%);
+    transform: scale(1);
   }
 }
 

@@ -3,8 +3,8 @@ import {ScoresService} from './scores.service';
 import {HapticsService} from './haptics.service';
 import {SoundService} from './sound.service';
 
-const COLS = 12;
-const ROWS = 24;
+const COLS = 10;
+const ROWS = 20;
 
 const COLORS = [
   '#A3C4F3', // Soft Blue
@@ -234,7 +234,6 @@ export class GameService {
           this.scoresService.maybePromoteToHighScores(this.score);
           this.scoresService.clearCurrentScore(); // no longer “in progress”
         }
-        this.draw(); // Draw final board with message
       }
     }
 
@@ -260,8 +259,8 @@ export class GameService {
     this.ctx.clearRect(0, 0, COLS * this.blockSize, ROWS * this.blockSize);
 
     // Draw grid lines
-    this.ctx.strokeStyle = '#ddd';
-    this.ctx.lineWidth = 0.5;
+    this.ctx.strokeStyle = '#bbb';
+    this.ctx.lineWidth = 0.2;
 
     for (let x = 0; x <= COLS; x++) {
       this.ctx.beginPath();
@@ -290,8 +289,8 @@ export class GameService {
             );
 
 // Add a border
-            this.ctx.strokeStyle = '#ddd'; // Dark pastel outline (same as background or slightly darker)
-            this.ctx.lineWidth = 0.5;
+            this.ctx.strokeStyle = '#bbb'; // Dark pastel outline (same as background or slightly darker)
+            this.ctx.lineWidth = 0.2;
             this.ctx.strokeRect(
               x * this.blockSize + 0.5,
               y * this.blockSize + 0.5,
@@ -308,7 +307,7 @@ export class GameService {
       this.currentPiece.drawX += (x - this.currentPiece.drawX) * 0.3;
 
       const ghostY = this.getGhostY();
-      this.ctx.globalAlpha = 0.2; // ghost transparency
+      this.ctx.globalAlpha = 0.3; // ghost transparency
       this.ctx.fillStyle = color;
       shape.forEach((row, dy) =>
         row.forEach((val, dx) => {
@@ -325,7 +324,7 @@ export class GameService {
       this.ctx.globalAlpha = 1; // reset transparency
 
       // Smooth falling animation
-      const isLanding = this.checkCollision(shape, x, y + 1);
+      //const isLanding = this.checkCollision(shape, x, y + 1);
       //const animProgress = isLanding ? 0 : fallProgress;
       const animProgress = 0; // disable falling animation for better UX
 
@@ -417,6 +416,15 @@ export class GameService {
       case 'ArrowUp':
         this.rotate();
         break;
+      case 'Enter':
+        this.hardDrop();
+        return; // already drew
+      case 'p':
+      case 'P':
+        this.togglePause();
+        return; // already drew
+      default:
+        return; // ignore other keys
     }
 
     this.draw();
@@ -527,21 +535,18 @@ export class GameService {
   /** Call when the falling piece permanently locks into the board */
   async onPieceLocked() {
     // Haptics & thud
+    this.bumpClass(this.gameContainerEl, 'lock-thud', 100);
     this.sound.play('lock');
-    this.haptics.impact(); // Light thud
-    this.bumpClass(this.gameContainerEl, 'lock-thud', 140);
   }
 
   /** Call when you’ve computed how many lines were cleared on this lock */
   async onLinesCleared(cleared: number) {
     if (!cleared) return;
 
-    // Per-line flash (you can also mark specific row DOM nodes if you render grid in DOM)
-    this.bumpClass(this.gameContainerEl, 'line-flash', 240);
-
-    if (cleared < 4) {
+    if (cleared < 3) {
       this.sound.play('line');
       this.haptics.selection(); // a tiny click
+      this.bumpClass(this.gameContainerEl, 'line-flash', 360);
     } else {
       // Tetris!
       this.sound.play('tetris');
