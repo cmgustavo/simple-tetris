@@ -19,7 +19,7 @@ let ROWS = Math.floor(availableHeight / BLOCK_SIZE);
 
 // Clamp it to a reasonable range
 if (ROWS > 20) ROWS = 20;
-if (ROWS < 14) ROWS = 14;
+if (ROWS < 16) ROWS = 16;
 
 const COLORS = [
   '#A3C4F3', // Soft Blue
