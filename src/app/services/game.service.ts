@@ -11,7 +11,7 @@ const BLOCK_SIZE = 25; // px per block (adjust to your design)
 const screenHeight = window.innerHeight;
 
 // Reserve some space for UI elements (score, buttons, etc.)
-const reservedSpace = 200; // px
+const reservedSpace = 400; // px
 const availableHeight = screenHeight - reservedSpace;
 
 // Compute how many rows fit
