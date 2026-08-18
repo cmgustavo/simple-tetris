@@ -165,7 +165,6 @@ pnpm-debug.log*
 
 # Capacitor
 ios/
-android/
 plugins/
 
 # Cordova
