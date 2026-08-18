@@ -12,7 +12,8 @@
     "icon-ios": "npx capacitor-assets generate --ios",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "patch": "node scripts/bump-version.js"
   },
   "private": true,
   "dependencies": {
