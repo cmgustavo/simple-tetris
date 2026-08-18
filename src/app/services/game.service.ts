@@ -74,6 +74,7 @@ export class GameService {
   private gameOver = false;
   private paused = false;
   private blockSize = 20;
+  private dpr = 1;
   private nextShapeIndex: number = Math.floor(Math.random() * SHAPES.length);
   private nextCtx: CanvasRenderingContext2D | null = null;
   public onScoreChange: ((score: number) => void) | null = null;
@@ -103,9 +104,28 @@ export class GameService {
     this.ctx = ctx;
     if (nextCtx) this.nextCtx = nextCtx;
 
-    const canvasWidth = ctx.canvas.width;
-    this.blockSize = Math.floor(canvasWidth / COLS);
+    // Cap the DPR we render at: high-density Android phones can report 3-4,
+    // which buys no visible sharpness here but multiplies canvas memory/fill cost.
+    this.dpr = Math.min(window.devicePixelRatio || 1, 3);
+
+    // ctx.canvas.width currently holds the desired CSS width set by the caller.
+    // Scale the backing store up by dpr and pin the CSS display size explicitly
+    // so the board renders crisp instead of being upscaled by the browser.
+    const cssWidth = ctx.canvas.width;
+    this.blockSize = Math.floor(cssWidth / COLS) * this.dpr;
+    ctx.canvas.width = this.blockSize * COLS;
     ctx.canvas.height = this.blockSize * ROWS;
+    ctx.canvas.style.width = `${cssWidth}px`;
+    ctx.canvas.style.height = `${ctx.canvas.height / this.dpr}px`;
+
+    if (nextCtx) {
+      const nextCssWidth = nextCtx.canvas.width;
+      const nextCssHeight = nextCtx.canvas.height;
+      nextCtx.canvas.width = Math.round(nextCssWidth * this.dpr);
+      nextCtx.canvas.height = Math.round(nextCssHeight * this.dpr);
+      nextCtx.canvas.style.width = `${nextCssWidth}px`;
+      nextCtx.canvas.style.height = `${nextCssHeight}px`;
+    }
 
     // Do not initialize a new game automatically
     //this.newGame();
@@ -185,7 +205,7 @@ export class GameService {
 
     const shape = SHAPES[this.nextShapeIndex];
     const color = COLORS[this.nextShapeIndex];
-    const blockSize = 20;
+    const blockSize = 20 * this.dpr;
 
     // Center shape in mini-canvas
     const offsetX = (ctx.canvas.width - shape[0].length * blockSize) / 2;

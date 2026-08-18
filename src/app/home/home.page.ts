@@ -51,8 +51,11 @@ export class HomePage implements AfterViewInit, OnDestroy {
 
     this.gameService.gameContainerEl = this.gameContainer.nativeElement;
 
-    // Set canvas width (e.g., max 300px)
-    canvas.width = Math.min(300, screenWidth - 32);
+    // Set canvas width in CSS px (max 300px). GameService.init() scales the
+    // actual backing store by devicePixelRatio so the board renders sharp on
+    // high-density Android screens instead of being upscaled and blurry.
+    const cssWidth = Math.min(300, screenWidth - 32);
+    canvas.width = cssWidth;
 
     const gameCtx = this.canvasRef.nativeElement.getContext('2d');
     const nextCtx = this.nextCanvasRef.nativeElement.getContext('2d');
@@ -101,7 +104,10 @@ export class HomePage implements AfterViewInit, OnDestroy {
 
     // --- Tunables ---
     const BOARD_COLS = 10;                  // set to your actual board width if different
-    const CELL_PX = Math.floor(this.canvasRef.nativeElement.width / BOARD_COLS) || 24;
+    // Use the CSS width (not canvas.width, which GameService.init() now holds
+    // as the device-pixel backing-store size) so swipe distance is measured
+    // in the same units as the touch coordinates the gesture reports.
+    const CELL_PX = Math.floor(cssWidth / BOARD_COLS) || 24;
 
     const TAP_TIME_MS = 200;                // max press time to count as tap
     const TAP_MOVE_PX = 8;                  // max travel to still be a tap
