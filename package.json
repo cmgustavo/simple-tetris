@@ -13,7 +13,10 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint",
-    "patch": "node scripts/bump-version.js"
+    "patch": "node scripts/bump-version.js patch",
+    "minor": "node scripts/bump-version.js minor",
+    "major": "node scripts/bump-version.js major",
+    "build-number": "node scripts/bump-android-build.js"
   },
   "private": true,
   "dependencies": {
