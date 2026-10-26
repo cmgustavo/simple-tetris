@@ -81,6 +81,7 @@ ion-item {
   position: relative;
   overflow: hidden;
   display: inline-block;
+  transition: box-shadow 0.25s ease-out;
 }
 
 .game-container canvas {
@@ -178,64 +179,43 @@ ion-item {
 }
 
 /* ================================================================
-   1) lock-thud — tiny drop + pastel ring pulse
+   1) lock-thud — delicate feedback (no container displacement or shaking)
    ================================================================= */
 .lock-thud {
-  animation: lockThud 100ms ease-out;
-  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, .1));
-}
-
-@keyframes lockThud {
-  0% {
-    transform: translateY(-1px);
-  }
-  100% {
-    transform: translateY(0);
-  }
+  transform: none !important;
 }
 
 /* ================================================================
-   2) line-flash — quick pastel “shine” sweep across the board
+   2) line-flash — delicate soft ambient sheen, never flickers opacity
    ================================================================= */
 .line-flash {
-  animation: lineFlash 300ms ease-out;
-  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .2));
+  animation: lineGlow 320ms ease-out;
+  transform: none !important;
 }
 
-@keyframes lineFlash {
+@keyframes lineGlow {
   0% {
-    opacity: 0;
-  }
-  20% {
-    opacity: 0.3;
-  }
-  80% {
-    opacity: 0.6;
+    box-shadow: 0 0 12px rgba(94, 146, 250, 0.25);
   }
   100% {
-    opacity: 1;
+    box-shadow: 0 0 0 rgba(94, 146, 250, 0);
   }
 }
 
 /* ================================================================
-   3) tetris-burst — celebratory burst + confetti sparkles
+   3) tetris-burst — soft celebratory aura, no container shaking/scaling
    ================================================================= */
-
 .tetris-burst {
-  animation: tetrisBurst 520ms cubic-bezier(0.2, 0.7, 0, 1.1);
-  will-change: transform, filter;
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.25));
+  animation: tetrisGlow 500ms ease-out;
+  transform: none !important;
 }
 
-@keyframes tetrisBurst {
+@keyframes tetrisGlow {
   0% {
-    transform: scale(1);
-  }
-  30% {
-    transform: scale(1.18);
+    box-shadow: 0 0 20px rgba(255, 179, 0, 0.35);
   }
   100% {
-    transform: scale(1);
+    box-shadow: 0 0 0 rgba(255, 179, 0, 0);
   }
 }
 
@@ -272,8 +252,7 @@ ion-button {
 }
 
 @media (pointer: fine) {
-  ion-button:hover { filter: brightness(1.02); }
-  ion-button:active { transform: translateY(0.5px); }
+  ion-button:hover { filter: brightness(1.02); }\n  ion-button:active { transform: translateY(0.5px); }
 }
 
 /* Focus ring (inside the shadow DOM) */
@@ -337,4 +316,3 @@ ion-toolbar ion-buttons ion-button {
     --border-color: color-mix(in srgb, currentColor 28%, transparent);
   }
 }
-
