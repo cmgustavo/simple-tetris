@@ -4,22 +4,7 @@ import {HapticsService} from './haptics.service';
 import {SoundService} from './sound.service';
 
 const COLS = 10;
-//const ROWS = 20;
-const BLOCK_SIZE = 25; // px per block (adjust to your design)
-
-// Get the available height (in pixels)
-const screenHeight = window.innerHeight;
-
-// Reserve some space for UI elements (score, buttons, etc.)
-const reservedSpace = 400; // px
-const availableHeight = screenHeight - reservedSpace;
-
-// Compute how many rows fit
-let ROWS = Math.floor(availableHeight / BLOCK_SIZE);
-
-// Clamp it to a reasonable range
-if (ROWS > 20) ROWS = 20;
-if (ROWS < 18) ROWS = 18;
+const ROWS = 20;
 
 const COLORS = [
   '#A3C4F3', // Soft Blue
@@ -61,7 +46,7 @@ export class GameService {
 
   public onGameOver: (() => void) | null = null;
   private ctx!: CanvasRenderingContext2D;
-  private board: number[][] = [];
+  private board: number[][] = Array.from({length: ROWS}, () => Array(COLS).fill(0));
   private currentPiece: {
     shape: number[][],
     color: string,
@@ -100,35 +85,41 @@ export class GameService {
     this.notifyScoreChange();
   }
 
-  init(ctx: CanvasRenderingContext2D, nextCtx?: CanvasRenderingContext2D) {
+  init(ctx: CanvasRenderingContext2D, nextCtx?: CanvasRenderingContext2D, cssBlockSize: number = 24) {
     this.ctx = ctx;
-    if (nextCtx) this.nextCtx = nextCtx;
-
-    // Cap the DPR we render at: high-density Android phones can report 3-4,
-    // which buys no visible sharpness here but multiplies canvas memory/fill cost.
-    this.dpr = Math.min(window.devicePixelRatio || 1, 3);
-
-    // ctx.canvas.width currently holds the desired CSS width set by the caller.
-    // Scale the backing store up by dpr and pin the CSS display size explicitly
-    // so the board renders crisp instead of being upscaled by the browser.
-    const cssWidth = ctx.canvas.width;
-    this.blockSize = Math.floor(cssWidth / COLS) * this.dpr;
-    ctx.canvas.width = this.blockSize * COLS;
-    ctx.canvas.height = this.blockSize * ROWS;
-    ctx.canvas.style.width = `${cssWidth}px`;
-    ctx.canvas.style.height = `${ctx.canvas.height / this.dpr}px`;
-
     if (nextCtx) {
-      const nextCssWidth = nextCtx.canvas.width;
-      const nextCssHeight = nextCtx.canvas.height;
-      nextCtx.canvas.width = Math.round(nextCssWidth * this.dpr);
-      nextCtx.canvas.height = Math.round(nextCssHeight * this.dpr);
-      nextCtx.canvas.style.width = `${nextCssWidth}px`;
-      nextCtx.canvas.style.height = `${nextCssHeight}px`;
+      this.nextCtx = nextCtx;
+      this.setupNextCanvas();
     }
+    this.resize(cssBlockSize);
+  }
 
-    // Do not initialize a new game automatically
-    //this.newGame();
+  private setupNextCanvas() {
+    if (!this.nextCtx) return;
+    this.dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const nextCssWidth = 85;
+    const nextCssHeight = 80;
+    this.nextCtx.canvas.width = Math.round(nextCssWidth * this.dpr);
+    this.nextCtx.canvas.height = Math.round(nextCssHeight * this.dpr);
+    this.nextCtx.canvas.style.width = `${nextCssWidth}px`;
+    this.nextCtx.canvas.style.height = `${nextCssHeight}px`;
+    this.drawNextShape();
+  }
+
+  resize(cssBlockSize: number) {
+    if (!this.ctx) return;
+    this.dpr = Math.min(window.devicePixelRatio || 1, 3);
+    this.blockSize = Math.floor(cssBlockSize * this.dpr);
+
+    const cssWidth = cssBlockSize * COLS;
+    const cssHeight = cssBlockSize * ROWS;
+
+    this.ctx.canvas.width = this.blockSize * COLS;
+    this.ctx.canvas.height = this.blockSize * ROWS;
+    this.ctx.canvas.style.width = `${cssWidth}px`;
+    this.ctx.canvas.style.height = `${cssHeight}px`;
+
+    this.draw();
   }
 
   start() {
@@ -205,7 +196,7 @@ export class GameService {
 
     const shape = SHAPES[this.nextShapeIndex];
     const color = COLORS[this.nextShapeIndex];
-    const blockSize = 20 * this.dpr;
+    const blockSize = Math.floor(18 * this.dpr);
 
     // Center shape in mini-canvas
     const offsetX = (ctx.canvas.width - shape[0].length * blockSize) / 2;
@@ -247,7 +238,6 @@ export class GameService {
     this.drawNextShape(); // draw to mini canvas
   }
 
-
   private update() {
     if (this.gameOver || !this.currentPiece) return;
 
@@ -262,13 +252,13 @@ export class GameService {
       this.clearLines();
       this.spawnPiece();
 
-
       if (this.collides()) {
         this.gameOver = true;
         if (this.score > 0) {
           this.scoresService.maybePromoteToHighScores(this.score);
           this.scoresService.clearCurrentScore(); // no longer “in progress”
         }
+        this.onGameOver?.();
       }
     }
 
@@ -323,8 +313,8 @@ export class GameService {
               this.blockSize
             );
 
-// Add a border
-            this.ctx.strokeStyle = '#bbb'; // Dark pastel outline (same as background or slightly darker)
+            // Add a border
+            this.ctx.strokeStyle = '#bbb'; // Dark pastel outline
             this.ctx.lineWidth = 0.2;
             this.ctx.strokeRect(
               x * this.blockSize + 0.5,
@@ -358,9 +348,6 @@ export class GameService {
       );
       this.ctx.globalAlpha = 1; // reset transparency
 
-      // Smooth falling animation
-      //const isLanding = this.checkCollision(shape, x, y + 1);
-      //const animProgress = isLanding ? 0 : fallProgress;
       const animProgress = 0; // disable falling animation for better UX
 
       // Draw actual falling piece
@@ -379,24 +366,21 @@ export class GameService {
       );
     }
 
-    // Score display
-    this.ctx.fillStyle = '#000';
-    this.ctx.font = '16px Arial';
-    //this.ctx.fillText('Score: ' + this.score, 5, 20);
-
     // Paused and Game Over overlays
     if (this.paused && !this.gameOver) {
       const centerX = (COLS * this.blockSize) / 2;
       const centerY = (ROWS * this.blockSize) / 2;
 
-      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-      this.ctx.fillRect(this.blockSize, centerY - 35, (COLS - 2) * this.blockSize, 55);
+      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+      this.ctx.fillRect(this.blockSize, centerY - (25 * this.dpr), (COLS - 2) * this.blockSize, 50 * this.dpr);
 
       this.ctx.fillStyle = '#fff';
-      this.ctx.font = '20px Arial';
+      this.ctx.font = `bold ${Math.round(20 * this.dpr)}px Arial`;
       this.ctx.textAlign = 'center';
+      this.ctx.textBaseline = 'middle';
       this.ctx.fillText('Paused', centerX, centerY);
       this.ctx.textAlign = 'start';
+      this.ctx.textBaseline = 'alphabetic';
     }
 
     if (this.gameOver) {
@@ -404,18 +388,18 @@ export class GameService {
       const centerY = (ROWS * this.blockSize) / 2;
 
       // Dark background box
-      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-      this.ctx.fillRect(this.blockSize, centerY - 35, (COLS - 2) * this.blockSize, 85);
+      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      this.ctx.fillRect(this.blockSize, centerY - (40 * this.dpr), (COLS - 2) * this.blockSize, 80 * this.dpr);
 
       // "Game Over" text
       this.ctx.fillStyle = '#fff';
-      this.ctx.font = '20px Arial';
+      this.ctx.font = `bold ${Math.round(20 * this.dpr)}px Arial`;
       this.ctx.textAlign = 'center';
-      this.ctx.fillText('Game Over', centerX, centerY - 5);
+      this.ctx.fillText('Game Over', centerX, centerY - (8 * this.dpr));
 
       // Final Score
-      this.ctx.font = '16px Arial';
-      this.ctx.fillText(`Final Score: ${this.score}`, centerX, centerY + 20);
+      this.ctx.font = `${Math.round(15 * this.dpr)}px Arial`;
+      this.ctx.fillText(`Final Score: ${this.score}`, centerX, centerY + (20 * this.dpr));
 
       this.ctx.textAlign = 'start'; // Reset alignment
     }
@@ -442,8 +426,13 @@ export class GameService {
           this.clearLines();
           this.spawnPiece();
           if (this.collides()) {
-            // Game over condition
-            // this.newGame();
+            this.gameOver = true;
+            if (this.score > 0) {
+              this.scoresService.maybePromoteToHighScores(this.score);
+              this.scoresService.clearCurrentScore();
+            }
+            this.onGameOver?.();
+            this.draw();
             return;
           }
         }
@@ -521,9 +510,16 @@ export class GameService {
 
     this.clearLines(); // Clear completed lines
     this.spawnPiece(); // Spawn the next piece
+    if (this.collides()) {
+      this.gameOver = true;
+      if (this.score > 0) {
+        this.scoresService.maybePromoteToHighScores(this.score);
+        this.scoresService.clearCurrentScore();
+      }
+      this.onGameOver?.();
+    }
     this.dropCounter = 0; // Reset drop timer
   }
-
 
   hardDrop() {
     if (!this.currentPiece) return;
@@ -541,7 +537,6 @@ export class GameService {
 
   /** Set current level -> faster fall (optional) */
   public setLevel(level: number) {
-    // Example curve: speed up by 8% each level
     const factor = Math.pow(0.92, level);
     this.dropInterval = Math.max(this.BASE_DROP_MS * factor, this.MIN_DROP_MS);
   }
@@ -563,13 +558,16 @@ export class GameService {
     return COLS;
   }
 
+  public getBoardRows(): number {
+    return ROWS;
+  }
+
   public isGameOver(): boolean {
     return this.gameOver;
   }
 
   /** Call when the falling piece permanently locks into the board */
   async onPieceLocked() {
-    // Haptics & thud
     this.bumpClass(this.gameContainerEl, 'lock-thud', 100);
     this.sound.play('lock');
   }
@@ -589,7 +587,6 @@ export class GameService {
       this.bumpClass(this.gameContainerEl, 'tetris-burst', 520);
     }
 
-    // Score example (tune to your rules)
     const delta = this.scoreFor(cleared);
     this.onScore?.(delta);
   }
@@ -603,23 +600,17 @@ export class GameService {
       case 3:
         return 300;
       case 4:
-        return 1200; // Tetris
+        return 1200;
       default:
         return 0;
     }
   }
 
-  public bumpClass(el?: HTMLElement, cls?: string, ms = 300) {
-    if (!el || !cls) return;
-    this.zone.runOutsideAngular(() => {
-      el.classList.remove(cls);
-      (el as any).offsetWidth;
-      // next tick to restart animation
-      requestAnimationFrame(() => {
-        el.classList.add(cls);
-        setTimeout(() => el.classList.remove(cls), ms);
-      });
-    });
+  private bumpClass(el: HTMLElement | undefined, cls: string, durationMs: number) {
+    if (!el) return;
+    el.classList.remove(cls);
+    void el.offsetWidth; // re-flow
+    el.classList.add(cls);
+    setTimeout(() => el.classList.remove(cls), durationMs);
   }
-
 }

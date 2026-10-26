@@ -1,7 +1,7 @@
 import {Component, ElementRef, ViewChild, AfterViewInit, OnDestroy} from '@angular/core';
 import {GameService} from '../services/game.service';
 import {Router} from '@angular/router';
-import {IonicModule, GestureController, Gesture, GestureDetail} from '@ionic/angular';
+import {IonicModule, GestureController, Gesture} from '@ionic/angular';
 import {CommonModule} from '@angular/common';
 import {ScoreEntry} from '../services/storage.service';
 import {ScoresService} from '../services/scores.service';
@@ -20,10 +20,9 @@ export class HomePage implements AfterViewInit, OnDestroy {
   @ViewChild('nextCanvas', {static: false}) nextCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('gestureArea', {static: true}) gestureArea!: ElementRef<HTMLElement>;
   @ViewChild('gameCanvas', {static: true}) canvasRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('gameContainer', { static: true }) gameContainer!: ElementRef<HTMLElement>;
+  @ViewChild('gameContainer', {static: true}) gameContainer!: ElementRef<HTMLElement>;
 
   private gesture!: Gesture;
-  private lastTapTime = 0;
 
   public score: number = 0;
   public scoreBump = false;
@@ -31,9 +30,10 @@ export class HomePage implements AfterViewInit, OnDestroy {
   public isPaused: boolean = true; // game starts in paused state
   public gameStarted = false;
   public gameFinished = false;
+  public currentCellPx = 24;
+  public containerWidth = 320;
   private softDropTimeout: any;
   private isSoftDropping = false;
-
 
   constructor(
     private gameService: GameService,
@@ -44,29 +44,49 @@ export class HomePage implements AfterViewInit, OnDestroy {
     private sounds: SoundService) {
   }
 
+  calculateLayout() {
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    // Available width for the 10-column canvas:
+    // Screen width minus page padding (32px) and canvas container padding (20px)
+    const maxAvailableWidth = Math.min(300, screenWidth - 52);
+
+    // Available height for the 20-row canvas:
+    // Screen height minus header (~56px), top-ui-bar (~85px), container padding (20px), button (~50px), and spacing (~25px)
+    const maxAvailableHeight = Math.max(200, screenHeight - 240);
+
+    const maxBlockFromWidth = Math.floor(maxAvailableWidth / 10);
+    const maxBlockFromHeight = Math.floor(maxAvailableHeight / 20);
+
+    const blockSize = Math.max(14, Math.min(maxBlockFromWidth, maxBlockFromHeight, 30));
+    this.currentCellPx = blockSize;
+    this.containerWidth = blockSize * 10 + 20;
+  }
+
+  private onResize = () => {
+    this.calculateLayout();
+    this.gameService.resize(this.currentCellPx);
+  };
+
   async ngAfterViewInit() {
     await this.sounds.preload();
-    const canvas = this.canvasRef.nativeElement;
-    const screenWidth = window.innerWidth;
-
     this.gameService.gameContainerEl = this.gameContainer.nativeElement;
 
-    // Set canvas width in CSS px (max 300px). GameService.init() scales the
-    // actual backing store by devicePixelRatio so the board renders sharp on
-    // high-density Android screens instead of being upscaled and blurry.
-    const cssWidth = Math.min(300, screenWidth - 32);
-    canvas.width = cssWidth;
+    this.calculateLayout();
 
     const gameCtx = this.canvasRef.nativeElement.getContext('2d');
-    const nextCtx = this.nextCanvasRef.nativeElement.getContext('2d');
-    if (gameCtx) this.gameService.init(gameCtx, nextCtx || undefined);
+    const nextCtx = this.nextCanvasRef?.nativeElement?.getContext('2d');
+    if (gameCtx) {
+      this.gameService.init(gameCtx, nextCtx || undefined, this.currentCellPx);
+    }
 
     // 1) Load the last in-progress score
     const lastScore = await this.scoresService.getCurrentScore();
 
     // 2) Try to promote it into Top 10 (only if it qualifies)
     if (lastScore > 0) {
-      const inserted = await this.scoresService.maybePromoteToHighScores(lastScore);
+      await this.scoresService.maybePromoteToHighScores(lastScore);
       // 3) Clear the carried-over current score (so we don't insert it twice)
       await this.scoresService.clearCurrentScore();
     }
@@ -74,7 +94,6 @@ export class HomePage implements AfterViewInit, OnDestroy {
     // 4) Reset current displayed score to 0 (fresh session)
     this.score = 0;
 
-    // keep UI synced with game service as you already do
     this.gameService.onScoreChange = (s) => {
       if (this.score !== s) {
         this.bumpScoreUI();
@@ -83,7 +102,7 @@ export class HomePage implements AfterViewInit, OnDestroy {
       this.scoresService.setCurrentScore(s); // keep persisting during play
     };
 
-    // (optional) auto-pause when app backgrounds & persist score
+    // Auto-pause when app backgrounds & persist score
     App.addListener('appStateChange', ({isActive}) => {
       if (!isActive) {
         this.isPaused = true;
@@ -92,29 +111,22 @@ export class HomePage implements AfterViewInit, OnDestroy {
       }
     });
 
-    // (optional) persist on tab close / web
     window.addEventListener('beforeunload', () => {
       this.scoresService.setCurrentScore(this.gameService.getScore());
     });
 
-    // (optional) persist when tab becomes hidden (web)
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) this.scoresService.setCurrentScore(this.gameService.getScore());
     });
 
-    // --- Tunables ---
-    const BOARD_COLS = 10;                  // set to your actual board width if different
-    // Use the CSS width (not canvas.width, which GameService.init() now holds
-    // as the device-pixel backing-store size) so swipe distance is measured
-    // in the same units as the touch coordinates the gesture reports.
-    const CELL_PX = Math.floor(cssWidth / BOARD_COLS) || 24;
+    window.addEventListener('resize', this.onResize);
+    window.addEventListener('orientationchange', this.onResize);
 
     const TAP_TIME_MS = 200;                // max press time to count as tap
     const TAP_MOVE_PX = 8;                  // max travel to still be a tap
     const LONG_PRESS_MS = 400;              // hold time to trigger hard drop
     const LONG_PRESS_MOVE_CANCEL_PX = 10;   // if moved more than this, cancel long-press
 
-// --- State ---
     let startX = 0, lastX = 0, startY = 0, pressStart = 0;
     let accumX = 0;
     let longPressTimer: any = null;
@@ -138,7 +150,6 @@ export class HomePage implements AfterViewInit, OnDestroy {
 
     const moveOnce = (dir: -1 | 1) => {
       if ((this.gameService as any).paused || (this.gameService as any).gameOver) return;
-      // swap to direct methods if you have them: moveLeft()/moveRight()
       this.gameService.handleKey(dir === -1 ? 'ArrowLeft' : 'ArrowRight');
     };
 
@@ -148,7 +159,7 @@ export class HomePage implements AfterViewInit, OnDestroy {
       direction: 'x',             // horizontal only
       threshold: 0,
       disableScroll: true,
-      priority: 9999 as any,      // (Ionic 5) use 'priority'; Ionic 6+ also honors 'gesturePriority'
+      priority: 9999 as any,
       gesturePriority: 9999 as any,
 
       onStart: (ev: any) => {
@@ -163,19 +174,17 @@ export class HomePage implements AfterViewInit, OnDestroy {
         const x = (ev.currentX ?? (startX + (ev.deltaX ?? 0))) || 0;
         const y = (ev.currentY ?? (startY + (ev.deltaY ?? 0))) || 0;
 
-        // cancel long-press if the user starts moving too much
         if (Math.hypot(x - startX, y - startY) > LONG_PRESS_MOVE_CANCEL_PX) {
           cancelLongPress();
         }
 
-        // discrete horizontal moves: one step per crossed cell width
         const dx = x - lastX;
         lastX = x;
         accumX += dx;
 
-        while (Math.abs(accumX) >= CELL_PX) {
+        while (Math.abs(accumX) >= this.currentCellPx) {
           const dir: -1 | 1 = accumX > 0 ? 1 : -1;
-          accumX -= dir * CELL_PX;
+          accumX -= dir * this.currentCellPx;
           moveOnce(dir);
         }
       },
@@ -184,7 +193,6 @@ export class HomePage implements AfterViewInit, OnDestroy {
         const now = performance.now();
         cancelLongPress();
 
-        // if hard drop already triggered during long press, stop here
         if (longPressed) return;
 
         const currentX = ev.currentX ?? ((startX + (ev.deltaX ?? 0)) || 0);
@@ -194,14 +202,11 @@ export class HomePage implements AfterViewInit, OnDestroy {
         const totalDy = Math.abs(currentY - startY);
         const dt = now - pressStart;
 
-        // Single tap -> rotate
         if (dt <= TAP_TIME_MS && totalDx < TAP_MOVE_PX && totalDy < TAP_MOVE_PX) {
           if (!(this.gameService as any).paused && !(this.gameService as any).gameOver) {
-            // swap to direct method if available: this.gameService.rotate()
             this.gameService.handleKey('ArrowUp');
           }
         }
-        // else: drag moves already applied in onMove
       }
     });
 
@@ -210,17 +215,21 @@ export class HomePage implements AfterViewInit, OnDestroy {
     window.addEventListener('beforeunload', cancelLongPress);
 
     this.refreshScores();
-    this.gameService.onGameOver = () => this.refreshScores();
+    this.gameService.onGameOver = () => {
+      this.gameStarted = false;
+      this.isPaused = true;
+      this.gameFinished = true;
+      this.refreshScores();
+    };
 
-    // keep keyboard for desktop testing
-    const keyHandler = (e: KeyboardEvent) => this.gameService.handleKey(e.key);
-    window.addEventListener('keydown', keyHandler);
+    window.addEventListener('keydown', this.keyHandler);
   }
 
   ngOnDestroy() {
     this.gesture?.destroy();
-    // remove any global listeners you added
-    // (wrap the keyHandler above in a property if you want to remove it here)
+    window.removeEventListener('resize', this.onResize);
+    window.removeEventListener('orientationchange', this.onResize);
+    window.removeEventListener('keydown', this.keyHandler);
   }
 
   async refreshScores() {
@@ -247,6 +256,7 @@ export class HomePage implements AfterViewInit, OnDestroy {
   newGame() {
     this.isPaused = false;
     this.gameStarted = true;
+    this.gameFinished = false;
     this.gameService.newGame();
   }
 
@@ -284,11 +294,8 @@ export class HomePage implements AfterViewInit, OnDestroy {
 
   onSoftDropPress() {
     this.isSoftDropping = true;
-
-    // Start soft dropping immediately
     this.softDrop();
 
-    // If held for 400ms, convert to hard drop
     this.softDropTimeout = setTimeout(() => {
       if (this.isSoftDropping) {
         this.hardDrop();
@@ -303,9 +310,7 @@ export class HomePage implements AfterViewInit, OnDestroy {
 
   private bumpScoreUI() {
     this.scoreBump = false;
-    // let Angular flush
     setTimeout(() => (this.scoreBump = true));
-    // remove class after anim ends
     setTimeout(() => (this.scoreBump = false), 420);
   }
 }

@@ -3,75 +3,113 @@ ion-content.home-bg {
   --background: var(--home-gradient);
 }
 
-canvas {
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.container-canvas {
-  text-align: center;
-  background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  max-width: 300px;
-  margin: 0 auto;
-}
-
-.gesture-area {
-  touch-action: none;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-canvas#gameCanvas {
+.game-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  height: 100%;
   width: 100%;
-  max-width: 300px;
-  height: auto;
+  box-sizing: border-box;
+  padding: 8px 16px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .top-ui-bar {
   display: flex;
   justify-content: space-between;
-  align-items: start;
-  max-width: 300px;
-  margin: 10px auto 20px auto;
+  align-items: center;
+  width: var(--game-width, 320px);
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 2px 0;
+  box-sizing: border-box;
 }
 
 .next-box {
-  text-align: center;
-  padding: 4px;
-  border-radius: 2px;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+canvas#nextCanvas {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  display: block;
 }
 
 .score-box {
-  width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: end;
-  padding-top: 5px;
+  align-items: flex-end;
+  justify-content: center;
+
   .label {
-    font-size: 20px;
-    font-weight: 400;
-    color: #333;
-    height: 24px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #444;
+    line-height: 1.2;
   }
 
   .number {
     font-size: 26px;
     font-weight: bold;
     color: #222;
-    height: 45px;
-    padding: 8px 0;
+    line-height: 1.2;
+    padding-top: 4px;
   }
+}
+
+.container-canvas {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-sizing: content-box;
+  margin: 0 auto;
+  line-height: 0;
+}
+
+.gesture-area {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  display: block;
+  line-height: 0;
+}
+
+.game-container {
+  position: relative;
+  overflow: hidden;
+  display: block;
+  line-height: 0;
+}
+
+canvas#gameCanvas {
+  display: block;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
 }
 
 .button-box {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 15px;
   width: 100%;
+  padding: 4px 0;
+
+  ion-button {
+    font-size: 1rem;
+    font-weight: 600;
+  }
 }

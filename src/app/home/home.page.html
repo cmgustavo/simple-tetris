@@ -12,55 +12,47 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" [scrollY]="false" [class]="(themeService.themeClass$ | async) + ' home-bg'">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Simple Tetris</ion-title>
-      <ion-buttons slot="end">
-        <ion-button (click)="goToSettings()">
-          <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
-        </ion-button>
-      </ion-buttons>
-    </ion-toolbar>
-  </ion-header>
-
-  <div class="top-ui-bar">
-    <div class="next-box">
-      <canvas #nextCanvas width="85" height="80"></canvas>
-    </div>
-    <div class="score-box">
-    @if (gameStarted) {
-        <div class="label">Score</div>
-        <div id="scoreLabel" class="number" [class.score-bump]="scoreBump">{{ score }}</div>
-    } @else {
-      <div class="label">Higher Score</div>
-      <div class="number">{{highScores.length ? highScores[0].score : '0'}}</div>
-    }
-    </div>
-  </div>
-
-  <div class="container-canvas">
-    <div #gestureArea class="gesture-area">
-      <div #gameContainer class="game-container">
-        <canvas #gameCanvas id="gameCanvas"></canvas>
+  <div class="game-layout" [style.--game-width.px]="containerWidth">
+    <div class="top-ui-bar">
+      <div class="next-box">
+        <canvas #nextCanvas id="nextCanvas" width="85" height="80"></canvas>
+      </div>
+      <div class="score-box">
+        @if (gameStarted) {
+          <div class="label">Score</div>
+          <div id="scoreLabel" class="number" [class.score-bump]="scoreBump">{{ score }}</div>
+        } @else {
+          <div class="label">Higher Score</div>
+          <div class="number">{{ highScores.length ? highScores[0].score : '0' }}</div>
+        }
       </div>
     </div>
-  </div>
-  <div class="button-box">
-    @if (!gameStarted) {
-    <ion-button (click)="newGame()" fill="outline" shape="round">
-      <ion-icon slot="start" name="play-outline"></ion-icon>
-      Start a new Game
-    </ion-button>
-    } @else {
-    <ion-button (click)="pauseOrResume()" fill="outline" shape="round">
-      @if (!isPaused) {
-        <ion-icon slot="start" name="pause-outline"></ion-icon>
-        Pause Game
+
+    <div class="container-canvas">
+      <div #gestureArea class="gesture-area">
+        <div #gameContainer class="game-container">
+          <canvas #gameCanvas id="gameCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="button-box">
+      @if (!gameStarted) {
+        <ion-button (click)="newGame()" fill="outline" shape="round">
+          <ion-icon slot="start" name="play-outline"></ion-icon>
+          Start a new Game
+        </ion-button>
       } @else {
-        <ion-icon slot="start" name="play-outline"></ion-icon>
-        Resume Game
+        <ion-button (click)="pauseOrResume()" fill="outline" shape="round">
+          @if (!isPaused) {
+            <ion-icon slot="start" name="pause-outline"></ion-icon>
+            Pause Game
+          } @else {
+            <ion-icon slot="start" name="play-outline"></ion-icon>
+            Resume Game
+          }
+        </ion-button>
       }
-    </ion-button>
-    }
+    </div>
   </div>
 </ion-content>
