@@ -122,10 +122,10 @@ export class HomePage implements AfterViewInit, OnDestroy {
     window.addEventListener('resize', this.onResize);
     window.addEventListener('orientationchange', this.onResize);
 
-    const TAP_TIME_MS = 200;                // max press time to count as tap
-    const TAP_MOVE_PX = 8;                  // max travel to still be a tap
+    const TAP_TIME_MS = 250;                // max press time to count as tap
+    const TAP_MOVE_PX = 14;                 // max travel to still be a tap
     const LONG_PRESS_MS = 400;              // hold time to trigger hard drop
-    const LONG_PRESS_MOVE_CANCEL_PX = 10;   // if moved more than this, cancel long-press
+    const LONG_PRESS_MOVE_CANCEL_PX = 14;   // if moved more than this, cancel long-press
 
     let startX = 0, lastX = 0, startY = 0, pressStart = 0;
     let accumX = 0;
@@ -142,14 +142,14 @@ export class HomePage implements AfterViewInit, OnDestroy {
       cancelLongPress();
       longPressed = false;
       longPressTimer = setTimeout(() => {
-        if ((this.gameService as any).paused || (this.gameService as any).gameOver) return;
+        if (this.gameService.isPaused() || this.gameService.isGameOver() || !this.gameStarted) return;
         longPressed = true;
         if (this.gameService.hardDrop) this.gameService.hardDrop();
       }, LONG_PRESS_MS);
     };
 
     const moveOnce = (dir: -1 | 1) => {
-      if ((this.gameService as any).paused || (this.gameService as any).gameOver) return;
+      if (this.gameService.isPaused() || this.gameService.isGameOver() || !this.gameStarted) return;
       this.gameService.handleKey(dir === -1 ? 'ArrowLeft' : 'ArrowRight');
     };
 
@@ -159,10 +159,22 @@ export class HomePage implements AfterViewInit, OnDestroy {
       direction: 'x',             // horizontal only
       threshold: 0,
       disableScroll: true,
+      passive: false,
       priority: 9999 as any,
       gesturePriority: 9999 as any,
 
+      canStart: (ev: any) => {
+        const target = (ev.event?.target || ev.target) as HTMLElement | null;
+        if (target?.closest('ion-button, ion-buttons, button, a')) {
+          return false;
+        }
+        return true;
+      },
+
       onStart: (ev: any) => {
+        if (ev.event && typeof ev.event.preventDefault === 'function' && ev.event.cancelable) {
+          try { ev.event.preventDefault(); } catch {}
+        }
         pressStart = performance.now();
         startX = lastX = (ev.startX ?? ev.currentX ?? 0);
         startY = (ev.startY ?? ev.currentY ?? 0);
@@ -171,6 +183,9 @@ export class HomePage implements AfterViewInit, OnDestroy {
       },
 
       onMove: (ev: any) => {
+        if (ev.event && typeof ev.event.preventDefault === 'function' && ev.event.cancelable) {
+          try { ev.event.preventDefault(); } catch {}
+        }
         const x = (ev.currentX ?? (startX + (ev.deltaX ?? 0))) || 0;
         const y = (ev.currentY ?? (startY + (ev.deltaY ?? 0))) || 0;
 
@@ -182,9 +197,10 @@ export class HomePage implements AfterViewInit, OnDestroy {
         lastX = x;
         accumX += dx;
 
-        while (Math.abs(accumX) >= this.currentCellPx) {
+        const cellPx = this.currentCellPx > 0 ? this.currentCellPx : 24;
+        while (Math.abs(accumX) >= cellPx) {
           const dir: -1 | 1 = accumX > 0 ? 1 : -1;
-          accumX -= dir * this.currentCellPx;
+          accumX -= dir * cellPx;
           moveOnce(dir);
         }
       },
@@ -202,8 +218,9 @@ export class HomePage implements AfterViewInit, OnDestroy {
         const totalDy = Math.abs(currentY - startY);
         const dt = now - pressStart;
 
+        // Single tap -> rotate
         if (dt <= TAP_TIME_MS && totalDx < TAP_MOVE_PX && totalDy < TAP_MOVE_PX) {
-          if (!(this.gameService as any).paused && !(this.gameService as any).gameOver) {
+          if (!this.gameService.isPaused() && !this.gameService.isGameOver() && this.gameStarted) {
             this.gameService.handleKey('ArrowUp');
           }
         }
@@ -257,6 +274,7 @@ export class HomePage implements AfterViewInit, OnDestroy {
     this.isPaused = false;
     this.gameStarted = true;
     this.gameFinished = false;
+    this.gesture?.enable(true);
     this.gameService.newGame();
   }
 

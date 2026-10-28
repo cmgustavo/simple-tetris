@@ -13,8 +13,10 @@ ion-content.home-bg {
   box-sizing: border-box;
   padding: 8px 16px;
   padding-bottom: max(12px, env(safe-area-inset-bottom));
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .top-ui-bar {
@@ -40,6 +42,7 @@ canvas#nextCanvas {
   border: 1px solid #ccc;
   border-radius: 6px;
   display: block;
+  touch-action: none;
 }
 
 .score-box {
@@ -76,6 +79,9 @@ canvas#nextCanvas {
   box-sizing: content-box;
   margin: 0 auto;
   line-height: 0;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .gesture-area {
@@ -91,6 +97,9 @@ canvas#nextCanvas {
   overflow: hidden;
   display: block;
   line-height: 0;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 canvas#gameCanvas {
@@ -99,6 +108,9 @@ canvas#gameCanvas {
   border: 1px solid #ccc;
   border-radius: 4px;
   box-sizing: border-box;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .button-box {
@@ -111,5 +123,6 @@ canvas#gameCanvas {
   ion-button {
     font-size: 1rem;
     font-weight: 600;
+    touch-action: manipulation;
   }
 }
