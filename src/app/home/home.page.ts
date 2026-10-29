@@ -22,7 +22,8 @@ export class HomePage implements AfterViewInit, OnDestroy {
   @ViewChild('gameCanvas', {static: true}) canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('gameContainer', {static: true}) gameContainer!: ElementRef<HTMLElement>;
 
-  private gesture!: Gesture;
+  private gesture?: Gesture;
+  private cleanupTouchListeners?: () => void;
 
   public score: number = 0;
   public scoreBump = false;
@@ -70,7 +71,8 @@ export class HomePage implements AfterViewInit, OnDestroy {
   };
 
   async ngAfterViewInit() {
-    await this.sounds.preload();
+    // 1) Synchronously initialize canvas, layout, and touch/keyboard controls first
+    // so async storage/sound operations can never delay or block touch input.
     this.gameService.gameContainerEl = this.gameContainer.nativeElement;
 
     this.calculateLayout();
@@ -81,35 +83,26 @@ export class HomePage implements AfterViewInit, OnDestroy {
       this.gameService.init(gameCtx, nextCtx || undefined, this.currentCellPx);
     }
 
-    // 1) Load the last in-progress score
-    const lastScore = await this.scoresService.getCurrentScore();
-
-    // 2) Try to promote it into Top 10 (only if it qualifies)
-    if (lastScore > 0) {
-      await this.scoresService.maybePromoteToHighScores(lastScore);
-      // 3) Clear the carried-over current score (so we don't insert it twice)
-      await this.scoresService.clearCurrentScore();
-    }
-
-    // 4) Reset current displayed score to 0 (fresh session)
-    this.score = 0;
+    this.setupTouchControls();
 
     this.gameService.onScoreChange = (s) => {
       if (this.score !== s) {
         this.bumpScoreUI();
       }
       this.score = s;
-      this.scoresService.setCurrentScore(s); // keep persisting during play
+      this.scoresService.setCurrentScore(s);
     };
 
-    // Auto-pause when app backgrounds & persist score
-    App.addListener('appStateChange', ({isActive}) => {
-      if (!isActive) {
-        this.isPaused = true;
-        if (!this.gameService.isPaused()) this.gameService.togglePause();
-        this.scoresService.setCurrentScore(this.gameService.getScore());
-      }
-    });
+    this.gameService.onGameOver = () => {
+      this.gameStarted = false;
+      this.isPaused = true;
+      this.gameFinished = true;
+      this.refreshScores();
+    };
+
+    window.addEventListener('resize', this.onResize);
+    window.addEventListener('orientationchange', this.onResize);
+    window.addEventListener('keydown', this.keyHandler);
 
     window.addEventListener('beforeunload', () => {
       this.scoresService.setCurrentScore(this.gameService.getScore());
@@ -119,18 +112,58 @@ export class HomePage implements AfterViewInit, OnDestroy {
       if (document.hidden) this.scoresService.setCurrentScore(this.gameService.getScore());
     });
 
-    window.addEventListener('resize', this.onResize);
-    window.addEventListener('orientationchange', this.onResize);
+    App.addListener('appStateChange', ({isActive}) => {
+      if (!isActive) {
+        this.isPaused = true;
+        if (!this.gameService.isPaused()) this.gameService.togglePause();
+        this.scoresService.setCurrentScore(this.gameService.getScore());
+      }
+    });
 
-    const TAP_TIME_MS = 250;                // max press time to count as tap
-    const TAP_MOVE_PX = 14;                 // max travel to still be a tap
-    const LONG_PRESS_MS = 400;              // hold time to trigger hard drop
-    const LONG_PRESS_MOVE_CANCEL_PX = 14;   // if moved more than this, cancel long-press
+    // 2) Preload audio and load persisted scores asynchronously
+    this.sounds.preload().catch(() => {});
 
-    let startX = 0, lastX = 0, startY = 0, pressStart = 0;
+    try {
+      const lastScore = await this.scoresService.getCurrentScore();
+      if (lastScore > 0) {
+        await this.scoresService.maybePromoteToHighScores(lastScore);
+        await this.scoresService.clearCurrentScore();
+      }
+    } catch {}
+
+    this.score = 0;
+    await this.refreshScores();
+  }
+
+  private isGameActive(): boolean {
+    return this.gameStarted && !this.gameService.isPaused() && !this.gameService.isGameOver();
+  }
+
+  private setupTouchControls() {
+    this.cleanupTouchListeners?.();
+
+    const layoutEl = (this.gestureArea.nativeElement.closest('.game-layout') as HTMLElement) || this.gestureArea.nativeElement;
+
+    const TAP_TIME_MS = 350;                // max press time to count as tap
+    const TAP_MOVE_PX = 15;                 // max travel to still be a tap
+    const SWIPE_MIN_PX = 12;                // min travel for quick flick/swipe
+    const LONG_PRESS_MS = 450;              // hold time to trigger hard drop
+    const LONG_PRESS_MOVE_CANCEL_PX = 12;   // if moved more than this, cancel long-press
+
+    let startX = 0;
+    let startY = 0;
+    let lastX = 0;
+    let lastY = 0;
+    let pressStart = 0;
     let accumX = 0;
+    let accumY = 0;
+    let movedHorizontally = false;
+    let movedVertically = false;
     let longPressTimer: any = null;
     let longPressed = false;
+    let activeTouchId: number | null = null;
+    let isMouseDragging = false;
+    let lastTouchTimestamp = 0;
 
     const cancelLongPress = () => {
       if (longPressTimer) {
@@ -138,112 +171,207 @@ export class HomePage implements AfterViewInit, OnDestroy {
         longPressTimer = null;
       }
     };
+
     const scheduleLongPress = () => {
       cancelLongPress();
       longPressed = false;
       longPressTimer = setTimeout(() => {
-        if (this.gameService.isPaused() || this.gameService.isGameOver() || !this.gameStarted) return;
+        if (!this.isGameActive() || movedHorizontally || movedVertically) return;
         longPressed = true;
-        if (this.gameService.hardDrop) this.gameService.hardDrop();
+        this.gameService.hardDrop();
       }, LONG_PRESS_MS);
     };
 
-    const moveOnce = (dir: -1 | 1) => {
-      if (this.gameService.isPaused() || this.gameService.isGameOver() || !this.gameStarted) return;
-      this.gameService.handleKey(dir === -1 ? 'ArrowLeft' : 'ArrowRight');
+    const isInteractiveTarget = (target: EventTarget | null): boolean => {
+      const el = target as HTMLElement | null;
+      if (!el || typeof el.closest !== 'function') return false;
+      return !!el.closest('ion-button, ion-buttons, button, a, ion-header, ion-toolbar');
     };
 
-    this.gesture = this.gestureCtrl.create({
-      el: this.gestureArea.nativeElement,
-      gestureName: 'tetris-gestures',
-      direction: 'x',             // horizontal only
-      threshold: 0,
-      disableScroll: true,
-      passive: false,
-      priority: 9999 as any,
-      gesturePriority: 9999 as any,
+    const onGestureStart = (x: number, y: number) => {
+      pressStart = performance.now();
+      startX = lastX = x;
+      startY = lastY = y;
+      accumX = 0;
+      accumY = 0;
+      movedHorizontally = false;
+      movedVertically = false;
+      scheduleLongPress();
+    };
 
-      canStart: (ev: any) => {
-        const target = (ev.event?.target || ev.target) as HTMLElement | null;
-        if (target?.closest('ion-button, ion-buttons, button, a')) {
-          return false;
-        }
-        return true;
-      },
+    const onGestureMove = (x: number, y: number) => {
+      if (!this.isGameActive()) return;
 
-      onStart: (ev: any) => {
-        if (ev.event && typeof ev.event.preventDefault === 'function' && ev.event.cancelable) {
-          try { ev.event.preventDefault(); } catch {}
-        }
-        pressStart = performance.now();
-        startX = lastX = (ev.startX ?? ev.currentX ?? 0);
-        startY = (ev.startY ?? ev.currentY ?? 0);
-        accumX = 0;
-        scheduleLongPress();
-      },
+      const dx = x - lastX;
+      const dy = y - lastY;
+      lastX = x;
+      lastY = y;
 
-      onMove: (ev: any) => {
-        if (ev.event && typeof ev.event.preventDefault === 'function' && ev.event.cancelable) {
-          try { ev.event.preventDefault(); } catch {}
-        }
-        const x = (ev.currentX ?? (startX + (ev.deltaX ?? 0))) || 0;
-        const y = (ev.currentY ?? (startY + (ev.deltaY ?? 0))) || 0;
+      if (Math.hypot(x - startX, y - startY) > LONG_PRESS_MOVE_CANCEL_PX) {
+        cancelLongPress();
+      }
 
-        if (Math.hypot(x - startX, y - startY) > LONG_PRESS_MOVE_CANCEL_PX) {
+      accumX += dx;
+      accumY += dy;
+
+      const cellPx = Math.max(14, this.currentCellPx || 24);
+
+      // Horizontal discrete steps (1 column per crossed cell width)
+      while (Math.abs(accumX) >= cellPx) {
+        const dir: -1 | 1 = accumX > 0 ? 1 : -1;
+        accumX -= dir * cellPx;
+        this.gameService.handleKey(dir === -1 ? 'ArrowLeft' : 'ArrowRight');
+        movedHorizontally = true;
+        accumY = 0;
+        cancelLongPress();
+      }
+
+      // Vertical downward drag (soft drop 1 row per cell height)
+      if (!movedHorizontally && Math.abs(y - startY) > Math.abs(x - startX)) {
+        while (accumY >= cellPx) {
+          accumY -= cellPx;
+          this.gameService.handleKey('ArrowDown');
+          movedVertically = true;
           cancelLongPress();
         }
+      }
+    };
 
-        const dx = x - lastX;
-        lastX = x;
-        accumX += dx;
+    const onGestureEnd = (x: number, y: number) => {
+      const now = performance.now();
+      cancelLongPress();
 
-        const cellPx = this.currentCellPx > 0 ? this.currentCellPx : 24;
-        while (Math.abs(accumX) >= cellPx) {
-          const dir: -1 | 1 = accumX > 0 ? 1 : -1;
-          accumX -= dir * cellPx;
-          moveOnce(dir);
-        }
-      },
+      if (longPressed || !this.isGameActive()) return;
 
-      onEnd: (ev: any) => {
-        const now = performance.now();
-        cancelLongPress();
+      const totalDx = x - startX;
+      const totalDy = y - startY;
+      const absDx = Math.abs(totalDx);
+      const absDy = Math.abs(totalDy);
+      const dt = now - pressStart;
 
-        if (longPressed) return;
-
-        const currentX = ev.currentX ?? ((startX + (ev.deltaX ?? 0)) || 0);
-        const currentY = ev.currentY ?? ((startY + (ev.deltaY ?? 0)) || 0);
-
-        const totalDx = Math.abs(currentX - startX);
-        const totalDy = Math.abs(currentY - startY);
-        const dt = now - pressStart;
-
-        // Single tap -> rotate
-        if (dt <= TAP_TIME_MS && totalDx < TAP_MOVE_PX && totalDy < TAP_MOVE_PX) {
-          if (!this.gameService.isPaused() && !this.gameService.isGameOver() && this.gameStarted) {
-            this.gameService.handleKey('ArrowUp');
+      if (!movedHorizontally && !movedVertically) {
+        if (dt <= TAP_TIME_MS && absDx < TAP_MOVE_PX && absDy < TAP_MOVE_PX) {
+          // Single tap -> rotate piece
+          this.gameService.handleKey('ArrowUp');
+        } else if (absDx >= SWIPE_MIN_PX && absDx >= absDy) {
+          // Quick horizontal flick shorter than a full cell -> move 1 column
+          this.gameService.handleKey(totalDx > 0 ? 'ArrowRight' : 'ArrowLeft');
+        } else if (totalDy <= -SWIPE_MIN_PX && absDy > absDx) {
+          // Quick upward swipe -> rotate piece
+          this.gameService.handleKey('ArrowUp');
+        } else if (totalDy >= SWIPE_MIN_PX && absDy > absDx) {
+          // Quick downward swipe -> hard drop on fast flick, otherwise soft drop
+          if (totalDy >= 50 && dt < 220) {
+            this.gameService.hardDrop();
+          } else {
+            this.gameService.handleKey('ArrowDown');
           }
         }
       }
-    });
-
-    this.gesture.enable(true);
-
-    window.addEventListener('beforeunload', cancelLongPress);
-
-    this.refreshScores();
-    this.gameService.onGameOver = () => {
-      this.gameStarted = false;
-      this.isPaused = true;
-      this.gameFinished = true;
-      this.refreshScores();
     };
 
-    window.addEventListener('keydown', this.keyHandler);
+    const handleTouchStart = (ev: TouchEvent) => {
+      lastTouchTimestamp = Date.now();
+      if (isInteractiveTarget(ev.target) || !this.isGameActive()) {
+        return;
+      }
+      if (ev.changedTouches.length === 0) return;
+
+      const touch = ev.changedTouches[0];
+      activeTouchId = touch.identifier;
+
+      if (ev.cancelable) {
+        ev.preventDefault();
+      }
+
+      onGestureStart(touch.clientX, touch.clientY);
+    };
+
+    const handleTouchMove = (ev: TouchEvent) => {
+      if (activeTouchId === null) return;
+
+      let touch: Touch | null = null;
+      for (let i = 0; i < ev.changedTouches.length; i++) {
+        if (ev.changedTouches[i].identifier === activeTouchId) {
+          touch = ev.changedTouches[i];
+          break;
+        }
+      }
+      if (!touch) return;
+
+      if (this.isGameActive() && ev.cancelable) {
+        ev.preventDefault();
+      }
+
+      onGestureMove(touch.clientX, touch.clientY);
+    };
+
+    const handleTouchEnd = (ev: TouchEvent) => {
+      if (activeTouchId === null) return;
+
+      let touch: Touch | null = null;
+      for (let i = 0; i < ev.changedTouches.length; i++) {
+        if (ev.changedTouches[i].identifier === activeTouchId) {
+          touch = ev.changedTouches[i];
+          break;
+        }
+      }
+      if (!touch) return;
+
+      activeTouchId = null;
+      onGestureEnd(touch.clientX, touch.clientY);
+    };
+
+    const handleTouchCancel = () => {
+      activeTouchId = null;
+      cancelLongPress();
+    };
+
+    const handleMouseDown = (ev: MouseEvent) => {
+      if (Date.now() - lastTouchTimestamp < 1000) return;
+      if (ev.button !== 0 || isInteractiveTarget(ev.target) || !this.isGameActive()) return;
+
+      isMouseDragging = true;
+      onGestureStart(ev.clientX, ev.clientY);
+    };
+
+    const handleMouseMove = (ev: MouseEvent) => {
+      if (!isMouseDragging) return;
+      onGestureMove(ev.clientX, ev.clientY);
+    };
+
+    const handleMouseUp = (ev: MouseEvent) => {
+      if (!isMouseDragging) return;
+      isMouseDragging = false;
+      onGestureEnd(ev.clientX, ev.clientY);
+    };
+
+    layoutEl.addEventListener('touchstart', handleTouchStart, {passive: false});
+    window.addEventListener('touchmove', handleTouchMove, {passive: false});
+    window.addEventListener('touchend', handleTouchEnd, {passive: false});
+    window.addEventListener('touchcancel', handleTouchCancel, {passive: false});
+
+    layoutEl.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('beforeunload', cancelLongPress);
+
+    this.cleanupTouchListeners = () => {
+      cancelLongPress();
+      layoutEl.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchcancel', handleTouchCancel);
+      layoutEl.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('beforeunload', cancelLongPress);
+    };
   }
 
   ngOnDestroy() {
     this.gesture?.destroy();
+    this.cleanupTouchListeners?.();
     window.removeEventListener('resize', this.onResize);
     window.removeEventListener('orientationchange', this.onResize);
     window.removeEventListener('keydown', this.keyHandler);
@@ -274,7 +402,6 @@ export class HomePage implements AfterViewInit, OnDestroy {
     this.isPaused = false;
     this.gameStarted = true;
     this.gameFinished = false;
-    this.gesture?.enable(true);
     this.gameService.newGame();
   }
 

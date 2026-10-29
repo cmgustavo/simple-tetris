@@ -70,6 +70,7 @@ export class GameService {
   // Animation timing
   private lastTime = 0;
   private dropCounter = 0;
+  private animationFrameId: number | null = null;
 
   public onGameOver: (() => void) | null = null;
   private ctx!: CanvasRenderingContext2D;
@@ -162,7 +163,10 @@ export class GameService {
     this.score = 0;
     this.notifyScoreChange();
     this.lastTime = performance.now();
-    requestAnimationFrame(this.frame);
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+    }
+    this.animationFrameId = requestAnimationFrame(this.frame);
   }
 
   private frame = (time: number) => {
@@ -186,7 +190,7 @@ export class GameService {
     }
 
     this.draw(time);
-    requestAnimationFrame(this.frame);
+    this.animationFrameId = requestAnimationFrame(this.frame);
   };
 
   newGame() {
@@ -205,7 +209,10 @@ export class GameService {
 
     this.lastTime = performance.now();
     this.dropCounter = 0;
-    requestAnimationFrame(this.frame);
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+    }
+    this.animationFrameId = requestAnimationFrame(this.frame);
 
     this.draw();
   }
@@ -753,7 +760,7 @@ export class GameService {
   }
 
   handleKey(key: string) {
-    if (!this.currentPiece || this.gameOver || this.isClearingLines) return;
+    if (!this.currentPiece || this.gameOver || this.isClearingLines || this.paused) return;
 
     switch (key) {
       case 'ArrowLeft':
@@ -795,10 +802,26 @@ export class GameService {
     const shape = this.currentPiece.shape;
     const rotated = shape[0].map((_, i) => shape.map(row => row[i]).reverse());
 
-    const original = this.currentPiece.shape;
+    const originalShape = this.currentPiece.shape;
+    const originalX = this.currentPiece.x;
     this.currentPiece.shape = rotated;
+
     if (this.collides()) {
-      this.currentPiece.shape = original;
+      // Wall kick: try nudging horizontally by 1 or 2 cells so pieces near borders can still rotate
+      const kicks = [-1, 1, -2, 2];
+      let kicked = false;
+      for (const dx of kicks) {
+        if (!this.checkCollision(rotated, originalX + dx, this.currentPiece.y)) {
+          this.currentPiece.x = originalX + dx;
+          this.currentPiece.drawX = this.currentPiece.x;
+          kicked = true;
+          break;
+        }
+      }
+      if (!kicked) {
+        this.currentPiece.shape = originalShape;
+        this.currentPiece.x = originalX;
+      }
     }
   }
 

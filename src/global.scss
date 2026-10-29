@@ -252,7 +252,8 @@ ion-button {
 }
 
 @media (pointer: fine) {
-  ion-button:hover { filter: brightness(1.02); }\n  ion-button:active { transform: translateY(0.5px); }
+  ion-button:hover { filter: brightness(1.02); }
+  ion-button:active { transform: translateY(0.5px); }
 }
 
 /* Focus ring (inside the shadow DOM) */

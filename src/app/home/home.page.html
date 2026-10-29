@@ -12,7 +12,7 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" [scrollY]="false" [class]="(themeService.themeClass$ | async) + ' home-bg'">
-  <div #gestureArea class="game-layout" [style.--game-width.px]="containerWidth">
+  <div class="game-layout" [style.--game-width.px]="containerWidth">
     <div class="top-ui-bar">
       <div class="next-box">
         <canvas #nextCanvas id="nextCanvas" width="85" height="80"></canvas>
@@ -29,7 +29,7 @@
     </div>
 
     <div class="container-canvas">
-      <div class="gesture-area">
+      <div #gestureArea class="gesture-area">
         <div #gameContainer class="game-container">
           <canvas #gameCanvas id="gameCanvas"></canvas>
         </div>

@@ -13,10 +13,8 @@ ion-content.home-bg {
   box-sizing: border-box;
   padding: 8px 16px;
   padding-bottom: max(12px, env(safe-area-inset-bottom));
-  overflow: hidden;
-  touch-action: none;
-  -webkit-user-select: none;
-  user-select: none;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .top-ui-bar {
@@ -42,7 +40,6 @@ canvas#nextCanvas {
   border: 1px solid #ccc;
   border-radius: 6px;
   display: block;
-  touch-action: none;
 }
 
 .score-box {
@@ -123,6 +120,5 @@ canvas#gameCanvas {
   ion-button {
     font-size: 1rem;
     font-weight: 600;
-    touch-action: manipulation;
   }
 }
