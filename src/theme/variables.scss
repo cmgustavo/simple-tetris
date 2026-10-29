@@ -2,6 +2,12 @@
 // http://ionicframework.com/docs/theming/
 
 :root {
+  /** Base light surface & text defaults (prevents OS dark mode from turning text/icons white on light backgrounds) */
+  --ion-background-color: #ffffff;
+  --ion-background-color-rgb: 255, 255, 255;
+  --ion-text-color: #222222;
+  --ion-text-color-rgb: 34, 34, 34;
+
   /** Primary (Soft Blue) */
   --ion-color-primary: #A3C4F3;
   --ion-color-primary-rgb: 163, 196, 243;
@@ -76,5 +82,6 @@
 
   /** UI Surfaces */
   --ion-toolbar-background: #fdfdfd;
+  --ion-toolbar-color: #222222;
   --ion-tab-bar-background: #fdfdfd;
 }

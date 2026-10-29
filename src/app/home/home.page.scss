@@ -1,18 +1,25 @@
-/* Only change background on Home by reading the --home-gradient variable */
 ion-content.home-bg {
   --background: var(--home-gradient);
+}
+
+ion-header.home-header ion-toolbar {
+  --background: #fdfdfd;
+  --color: #222222;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-width: 0 0 1px 0;
+  --min-height: 48px;
 }
 
 .game-layout {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-evenly;
+  justify-content: center;
+  gap: 8px;
   height: 100%;
   width: 100%;
   box-sizing: border-box;
-  padding: 8px 16px;
-  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  padding: 6px 16px max(10px, env(safe-area-inset-bottom));
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -64,6 +71,16 @@ canvas#nextCanvas {
   }
 }
 
+.container-canvas,
+.gesture-area,
+.game-container,
+canvas#gameCanvas {
+  line-height: 0;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .container-canvas {
   display: inline-flex;
   justify-content: center;
@@ -75,28 +92,16 @@ canvas#nextCanvas {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   box-sizing: content-box;
   margin: 0 auto;
-  line-height: 0;
-  touch-action: none;
-  -webkit-user-select: none;
-  user-select: none;
 }
 
-.gesture-area {
-  touch-action: none;
-  -webkit-user-select: none;
-  user-select: none;
+.gesture-area,
+.game-container {
   display: block;
-  line-height: 0;
 }
 
 .game-container {
   position: relative;
   overflow: hidden;
-  display: block;
-  line-height: 0;
-  touch-action: none;
-  -webkit-user-select: none;
-  user-select: none;
 }
 
 canvas#gameCanvas {
@@ -105,9 +110,6 @@ canvas#gameCanvas {
   border: 1px solid #ccc;
   border-radius: 4px;
   box-sizing: border-box;
-  touch-action: none;
-  -webkit-user-select: none;
-  user-select: none;
 }
 
 .button-box {
@@ -115,7 +117,7 @@ canvas#gameCanvas {
   justify-content: center;
   align-items: center;
   width: 100%;
-  padding: 4px 0;
+  padding: 2px 0;
 
   ion-button {
     font-size: 1rem;

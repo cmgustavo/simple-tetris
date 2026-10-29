@@ -17,7 +17,7 @@ import {App} from "@capacitor/app";
   imports: [IonicModule, CommonModule],
 })
 export class HomePage implements AfterViewInit, OnDestroy {
-  @ViewChild('nextCanvas', {static: false}) nextCanvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('nextCanvas', {static: true}) nextCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('gestureArea', {static: true}) gestureArea!: ElementRef<HTMLElement>;
   @ViewChild('gameCanvas', {static: true}) canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('gameContainer', {static: true}) gameContainer!: ElementRef<HTMLElement>;
@@ -46,16 +46,17 @@ export class HomePage implements AfterViewInit, OnDestroy {
   }
 
   calculateLayout() {
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
+    const layoutEl = this.gestureArea?.nativeElement?.closest('.game-layout') as HTMLElement | null;
+    const screenWidth = layoutEl?.clientWidth || window.innerWidth;
+    const screenHeight = layoutEl?.clientHeight || (window.innerHeight - 52);
 
     // Available width for the 10-column canvas:
     // Screen width minus page padding (32px) and canvas container padding (20px)
     const maxAvailableWidth = Math.min(300, screenWidth - 52);
 
     // Available height for the 20-row canvas:
-    // Screen height minus header (~56px), top-ui-bar (~85px), container padding (20px), button (~50px), and spacing (~25px)
-    const maxAvailableHeight = Math.max(200, screenHeight - 240);
+    // Content height minus top-ui-bar (~85px), container padding (20px), button (~46px), and gaps (~32px)
+    const maxAvailableHeight = Math.max(200, screenHeight - 185);
 
     const maxBlockFromWidth = Math.floor(maxAvailableWidth / 10);
     const maxBlockFromHeight = Math.floor(maxAvailableHeight / 20);
@@ -82,6 +83,9 @@ export class HomePage implements AfterViewInit, OnDestroy {
     if (gameCtx) {
       this.gameService.init(gameCtx, nextCtx || undefined, this.currentCellPx);
     }
+
+    // Re-measure once Ionic layout & Android window insets settle
+    setTimeout(() => this.onResize(), 80);
 
     this.setupTouchControls();
 

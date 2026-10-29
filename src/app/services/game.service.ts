@@ -17,13 +17,13 @@ const COLORS = [
 ];
 
 const SHAPES = [
-  [[1, 1, 1, 1]], // I
-  [[1, 1], [1, 1]], // O
-  [[0, 1, 0], [1, 1, 1]], // T
-  [[1, 0, 0], [1, 1, 1]], // L
-  [[0, 0, 1], [1, 1, 1]], // J
-  [[1, 1, 0], [0, 1, 1]], // S
-  [[0, 1, 1], [1, 1, 0]], // Z
+  [[1, 1, 1, 1]],           // I
+  [[1, 1], [1, 1]],         // O
+  [[0, 1, 0], [1, 1, 1]],   // T
+  [[1, 0], [1, 0], [1, 1]], // L (upright classic L)
+  [[0, 1], [0, 1], [1, 1]], // J (upright classic J)
+  [[1, 1, 0], [0, 1, 1]],   // S
+  [[0, 1, 1], [1, 1, 0]],   // Z
 ];
 
 interface LockSheen {
@@ -89,7 +89,8 @@ export class GameService {
   private paused = false;
   private blockSize = 20;
   private dpr = 1;
-  private nextShapeIndex: number = Math.floor(Math.random() * SHAPES.length);
+  private shapeBag: number[] = [];
+  private nextShapeIndex: number = -1;
   private nextCtx: CanvasRenderingContext2D | null = null;
   public onScoreChange: ((score: number) => void) | null = null;
 
@@ -110,7 +111,38 @@ export class GameService {
     private haptics: HapticsService,
     private sound: SoundService,
     private zone: NgZone
-  ) {}
+  ) {
+    this.nextShapeIndex = this.pullNextFromBag();
+  }
+
+  /**
+   * 7-bag randomizer that guarantees fair piece distribution and avoids
+   * consecutive identical pieces so the Next preview always visibly updates.
+   */
+  private pullNextFromBag(avoidIndex?: number): number {
+    if (this.shapeBag.length === 0) {
+      const bag = Array.from({length: SHAPES.length}, (_, i) => i);
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [bag[i], bag[j]] = [bag[j], bag[i]];
+      }
+      // Prevent back-to-back identical pieces across bag boundaries
+      if (avoidIndex !== undefined && bag[bag.length - 1] === avoidIndex && bag.length > 1) {
+        const swapIdx = Math.floor(Math.random() * (bag.length - 1));
+        const last = bag.length - 1;
+        [bag[last], bag[swapIdx]] = [bag[swapIdx], bag[last]];
+      }
+      this.shapeBag = bag;
+    }
+
+    let next = this.shapeBag.pop()!;
+    if (avoidIndex !== undefined && next === avoidIndex && this.shapeBag.length > 0) {
+      const alt = this.shapeBag.pop()!;
+      this.shapeBag.unshift(next);
+      next = alt;
+    }
+    return next;
+  }
 
   private notifyScoreChange() {
     this.onScoreChange?.(this.score);
@@ -136,10 +168,15 @@ export class GameService {
     this.dpr = Math.min(window.devicePixelRatio || 1, 3);
     const nextCssWidth = 85;
     const nextCssHeight = 80;
-    this.nextCtx.canvas.width = Math.round(nextCssWidth * this.dpr);
-    this.nextCtx.canvas.height = Math.round(nextCssHeight * this.dpr);
-    this.nextCtx.canvas.style.width = `${nextCssWidth}px`;
-    this.nextCtx.canvas.style.height = `${nextCssHeight}px`;
+    const targetWidth = Math.round(nextCssWidth * this.dpr);
+    const targetHeight = Math.round(nextCssHeight * this.dpr);
+
+    if (this.nextCtx.canvas.width !== targetWidth || this.nextCtx.canvas.height !== targetHeight) {
+      this.nextCtx.canvas.width = targetWidth;
+      this.nextCtx.canvas.height = targetHeight;
+      this.nextCtx.canvas.style.width = `${nextCssWidth}px`;
+      this.nextCtx.canvas.style.height = `${nextCssHeight}px`;
+    }
     this.drawNextShape();
   }
 
@@ -156,6 +193,7 @@ export class GameService {
     this.ctx.canvas.style.width = `${cssWidth}px`;
     this.ctx.canvas.style.height = `${cssHeight}px`;
 
+    this.setupNextCanvas();
     this.draw();
   }
 
@@ -204,6 +242,8 @@ export class GameService {
     this.clearingRows = [];
     this.particles = [];
     this.floatingScores = [];
+    this.shapeBag = [];
+    this.nextShapeIndex = this.pullNextFromBag();
     this.spawnPiece();
     this.setBaseSpeed(1000);
 
@@ -244,33 +284,53 @@ export class GameService {
     if (!this.nextCtx) return;
 
     const ctx = this.nextCtx;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    // Only draw the next piece preview once a game has started (or just ended)
+    if (!this.currentPiece && !this.isClearingLines && !this.gameOver) {
+      ctx.restore();
+      return;
+    }
 
     const shape = SHAPES[this.nextShapeIndex];
     const color = COLORS[this.nextShapeIndex];
+    if (!shape || !color) {
+      ctx.restore();
+      return;
+    }
+
     const blockSize = Math.floor(18 * this.dpr);
+    const offsetX = Math.round((ctx.canvas.width - shape[0].length * blockSize) / 2);
+    const offsetY = Math.round((ctx.canvas.height - shape.length * blockSize) / 2);
 
-    const offsetX = (ctx.canvas.width - shape[0].length * blockSize) / 2;
-    const offsetY = (ctx.canvas.height - shape.length * blockSize) / 2;
-
-    ctx.fillStyle = color;
     shape.forEach((row, y) =>
       row.forEach((val, x) => {
         if (val) {
-          ctx.fillRect(
-            offsetX + x * blockSize,
-            offsetY + y * blockSize,
-            blockSize,
-            blockSize
+          const bx = offsetX + x * blockSize;
+          const by = offsetY + y * blockSize;
+
+          ctx.fillStyle = color;
+          ctx.fillRect(bx, by, blockSize, blockSize);
+
+          ctx.strokeStyle = 'rgba(0, 0, 0, 0.22)';
+          ctx.lineWidth = Math.max(1, 0.8 * this.dpr);
+          ctx.strokeRect(
+            bx + 0.5,
+            by + 0.5,
+            blockSize - 1,
+            blockSize - 1
           );
         }
       })
     );
+    ctx.restore();
   }
 
   private spawnPiece() {
-    const shapeIndex = this.nextShapeIndex;
-    const shape = SHAPES[shapeIndex];
+    const shapeIndex = this.nextShapeIndex >= 0 ? this.nextShapeIndex : this.pullNextFromBag();
+    const shape = SHAPES[shapeIndex].map(row => [...row]);
     const color = COLORS[shapeIndex];
 
     this.currentPiece = {
@@ -283,7 +343,7 @@ export class GameService {
     };
     this.currentPiece.drawX = this.currentPiece.x;
 
-    this.nextShapeIndex = Math.floor(Math.random() * SHAPES.length);
+    this.nextShapeIndex = this.pullNextFromBag(shapeIndex);
     this.drawNextShape();
   }
 
@@ -469,6 +529,7 @@ export class GameService {
   private draw(time: number = performance.now()) {
     if (!this.ctx) return;
     this.ctx.clearRect(0, 0, COLS * this.blockSize, ROWS * this.blockSize);
+    this.drawNextShape();
 
     // Draw grid lines
     this.ctx.strokeStyle = '#bbb';
@@ -560,8 +621,8 @@ export class GameService {
           );
 
           // Subtle border
-          this.ctx.strokeStyle = '#bbb';
-          this.ctx.lineWidth = 0.2;
+          this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.18)';
+          this.ctx.lineWidth = Math.max(1, 0.6 * this.dpr);
           this.ctx.strokeRect(
             x * this.blockSize + 0.5,
             y * this.blockSize + 0.5,
@@ -627,14 +688,24 @@ export class GameService {
 
       // Draw actual piece
       this.ctx.fillStyle = color;
+      this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.18)';
+      this.ctx.lineWidth = Math.max(1, 0.6 * this.dpr);
       shape.forEach((row, dy) =>
         row.forEach((val, dx) => {
           if (val) {
+            const px = (this.currentPiece!.drawX + dx) * this.blockSize;
+            const py = (y + dy) * this.blockSize;
             this.ctx.fillRect(
-              (this.currentPiece!.drawX + dx) * this.blockSize,
-              (y + dy) * this.blockSize,
+              px,
+              py,
               this.blockSize,
               this.blockSize
+            );
+            this.ctx.strokeRect(
+              px + 0.5,
+              py + 0.5,
+              this.blockSize - 1,
+              this.blockSize - 1
             );
           }
         })

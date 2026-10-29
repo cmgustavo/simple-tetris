@@ -31,6 +31,25 @@ ion-item {
   --transition: none;
 }
 
+/* Ensure header toolbars and icons are always clearly visible on Android & Web */
+ion-header ion-toolbar {
+  --background: #fdfdfd;
+  --color: #222222;
+  color: #222222;
+}
+
+ion-header ion-title {
+  color: #222222;
+  font-weight: 600;
+}
+
+ion-header ion-button,
+ion-header ion-back-button,
+ion-header ion-icon {
+  --color: #222222;
+  color: #222222;
+}
+
 /* ==============================
    Global Flat Design Styles
    ============================== */

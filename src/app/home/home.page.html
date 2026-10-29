@@ -1,17 +1,15 @@
-<ion-header [translucent]="true">
+<ion-header class="home-header">
   <ion-toolbar>
-    <ion-title>
-      Simple Tetris
-    </ion-title>
+    <ion-title>Simple Tetris</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="goToSettings()">
+      <ion-button (click)="goToSettings()" aria-label="Settings">
         <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" [scrollY]="false" [class]="(themeService.themeClass$ | async) + ' home-bg'">
+<ion-content [scrollY]="false" [class]="(themeService.themeClass$ | async) + ' home-bg'">
   <div class="game-layout" [style.--game-width.px]="containerWidth">
     <div class="top-ui-bar">
       <div class="next-box">

@@ -4,6 +4,9 @@ const config: CapacitorConfig = {
   appId: 'com.tetrissimpleng',
   appName: 'Tetris Simple',
   webDir: 'www',
+  android: {
+    adjustMarginsForEdgeToEdge: 'auto',
+  },
   plugins: {
     StatusBar: {
       overlaysWebView: false,
