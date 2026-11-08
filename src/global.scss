@@ -35,12 +35,14 @@ ion-item {
 ion-header ion-toolbar {
   --background: #fdfdfd;
   --color: #222222;
+  --padding-top: 0px;
   color: #222222;
 }
 
 ion-header ion-title {
   color: #222222;
   font-weight: 600;
+  text-align: center;
 }
 
 ion-header ion-button,

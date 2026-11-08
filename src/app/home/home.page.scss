@@ -2,12 +2,29 @@ ion-content.home-bg {
   --background: var(--home-gradient);
 }
 
+ion-header.home-header {
+  --background: #fdfdfd;
+}
+
 ion-header.home-header ion-toolbar {
   --background: #fdfdfd;
   --color: #222222;
   --border-color: rgba(0, 0, 0, 0.08);
   --border-width: 0 0 1px 0;
   --min-height: 48px;
+  --padding-top: 0px;
+}
+
+ion-header.home-header ion-title {
+  color: #222222;
+  font-weight: 700;
+  font-size: 1.25rem;
+  text-align: center;
+}
+
+ion-header.home-header ion-icon {
+  font-size: 24px;
+  color: #222222;
 }
 
 .game-layout {
